@@ -61,6 +61,8 @@ namespace ShareDevice
 
             app.UseStaticFiles();
 
+            app.UseWebSockets();
+
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
