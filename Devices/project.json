@@ -3,6 +3,7 @@
 
   "dependencies": {
     "Minicap": "1.0.0-*",
+    "MiniTouch": "1.0.0-*",
     "NETStandard.Library": "1.6.1"
   },
 

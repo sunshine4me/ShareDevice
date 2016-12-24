@@ -29,6 +29,7 @@ namespace ShareDevice
 
             var host = new WebHostBuilder()
                 .UseKestrel()
+                //.UseUrls("http://*:5000") //手动配置
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseStartup<Startup>()

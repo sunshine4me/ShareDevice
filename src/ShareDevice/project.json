@@ -53,9 +53,10 @@
   "publishOptions": {
     "include": [
       "wwwroot",
-      "**/*.cshtml",
+      "Views/*.cshtml",
       "appsettings.json",
-      "web.config"
+      "web.config",
+      "MiniLib"
     ]
   },
 

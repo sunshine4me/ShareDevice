@@ -49,7 +49,9 @@ namespace ShareDevice.Controllers
                 };
 
 
-                ad.startMinicap();
+                ad.StartMinicap();
+
+                ad.StartMiniTouch();
 
 
                 while (!result.CloseStatus.HasValue) {

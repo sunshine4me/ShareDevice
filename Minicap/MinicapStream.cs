@@ -64,6 +64,7 @@ namespace Minicap
             string tmp = string.Format("shell LD_LIBRARY_PATH={0} /data/local/tmp/minicap -P {1}x{2}@{3}x{4}/{5}", MINICAP_DEVICE_PATH, width, height, virtualwidth, virtualheight, orientation);
             //string tmp = string.Format("shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 1080x1920@360x640/0");
 
+            //启动server
             minicapServerProcess = StartProcess("adb", tmp);
 
 
