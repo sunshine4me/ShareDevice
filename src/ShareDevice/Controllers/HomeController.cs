@@ -8,19 +8,16 @@ using Microsoft.AspNetCore.Http;
 using System.Threading;
 using System.Net.WebSockets;
 
-namespace ShareDevice.Controllers
-{
-    public class HomeController : Controller
-    {
+namespace ShareDevice.Controllers {
+    public class HomeController : Controller {
         public static AndroidDevice ad;
 
-        public IActionResult Index()
-        {
+        public IActionResult Index() {
             ViewBag.width = ad.virtualwidth;
             ViewBag.height = ad.virtualheight;
             return View();
         }
-        
+
 
         private static bool isClient;
 
@@ -39,10 +36,10 @@ namespace ShareDevice.Controllers
 
                 isClient = true;
 
-                byte[] buffer = new byte[128];
-                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                byte[] bufer = new byte[128];
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(bufer), CancellationToken.None);
 
-                
+
                 ad.SetMinicapEvent = delegate (byte[] imgByte) {
                     webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None);
 
@@ -54,13 +51,20 @@ namespace ShareDevice.Controllers
                 ad.StartMiniTouch();
 
 
-                while (!result.CloseStatus.HasValue) {
+                while (true) {
+                    byte[] ReceiveBuffer = new byte[128];
+                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(ReceiveBuffer), CancellationToken.None);
 
-                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                    if (result.CloseStatus.HasValue) break;
+
+
+                    TouchEvent(ReceiveBuffer);
+
 
                 }
 
                 ad.StopMinicap();
+                ad.StopMiniTouch();
 
                 isClient = false;
 
@@ -79,9 +83,44 @@ namespace ShareDevice.Controllers
         }
 
 
-        public IActionResult Error()
-        {
+        public IActionResult Error() {
             return View();
         }
+
+        [NonAction]
+        /// <summary>
+        /// 屏幕操作
+        /// </summary>
+        /// <param name="buffer"></param>
+        private void TouchEvent(byte[] buffer) {
+            string str = System.Text.Encoding.UTF8.GetString(buffer);
+            var strArry = str.Split(':');
+
+            if (strArry.Length < 2) return;
+
+            switch (strArry[0]) {
+                case "3": {
+                        var pnt = strArry[1].Split(',');
+                        int X = (int)Convert.ToDouble(pnt[0]);
+                        int Y = (int)Convert.ToDouble(pnt[1]);
+                        ad.TouchMove(X, Y);
+                    }
+                    break;
+                case "1": {
+                        var pnt = strArry[1].Split(',');
+                        int X = (int)Convert.ToDouble(pnt[0]);
+                        int Y = (int)Convert.ToDouble(pnt[1]);
+                        ad.TouchDown(X, Y);
+                    }
+                    break;
+                case "2":
+                    ad.TouchUp();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
     }
 }

@@ -1,85 +1,150 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
+<div class="row">
 
-<h2>WebSocket Test</h2>
-<div id="output"></div> 
-<canvas id="Canvas" width="@(ViewBag.width)px" height="@(ViewBag.height)px"></canvas>
+    <div class="col-md-6">
 
-<script language="javascript" type="text/javascript">
+        <canvas id="Canvas" width="@ViewBag.width" height="@ViewBag.height"></canvas>
+    </div>
 
-    var wsUri = "ws://localhost:5000/Websocket";
-    var output;
+    <div class="col-md-6">
+        <h2>WebSocket Test</h2>
+        <div id="output"></div>
+    </div>
+</div>
 
-    function init() {
-        output = document.getElementById("output");
-        testWebSocket();
-    }
 
-    function testWebSocket() {
+@section Scripts {
+    <script language="javascript" type="text/javascript">
 
-        websocket = new WebSocket(wsUri);
-        websocket.onopen = function(evt) {
-            onOpen(evt)
-        };
-        websocket.onclose = function(evt) {
-            onClose(evt)
-        };
-        websocket.onmessage = function(evt) {
-            onMessage(evt)
-        };
-        websocket.onerror = function(evt) {
-            onError(evt)
-        };
-    }
 
-    function onOpen(evt) {
-        doSend("WebSocket rocks");
-        writeToScreen("开始链接设备,请耐心等待");
-    }
+        $(function () {
 
-    function onClose(evt) {
-        writeToScreen("链接关闭!");
-    }
+            document.oncontextmenu = function () { return false; };
+            document.ondragstart = function () { return false; };
+            document.onselectstart = function () { return false; };
+            document.onselect = function () { return false; };
+            
+            var wsUri = "ws://localhost:5000/Websocket";
 
-    var canvas = document.getElementById("Canvas");
-    var context = canvas.getContext("2d");
-    var cWidth= canvas.width;
-    var cHeight= canvas.height;
+            var canvas = document.getElementById("Canvas");
+            var context = canvas.getContext("2d");
+            var cWidth = canvas.width;
+            var cHeight = canvas.height;
 
-    function onMessage(evt) {
+            var output = document.getElementById("output");
 
-        if (typeof (evt.data) == "string") {
-            writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
-        } else {
-            var image = new Image();
+            var websocket;
 
-            image.onload = function () {
-                context.clearRect(0, 0,cWidth, cHeight);
-                context.drawImage(image, 0, 0, cWidth, cHeight);
-                window.URL.revokeObjectURL(image.src)
+            function startWebSocket() {
+
+                websocket = new WebSocket(wsUri);
+                websocket.onopen = function (evt) {
+                    onOpen(evt)
+                };
+                websocket.onclose = function (evt) {
+                    onClose(evt)
+                };
+                websocket.onmessage = function (evt) {
+                    onMessage(evt)
+                };
+                websocket.onerror = function (evt) {
+                    onError(evt)
+                };
             }
-            image.src = URL.createObjectURL(evt.data);
-        }
-        //writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
-        //websocket.send("");
-    }
 
-    function onError(evt) {
-        writeToScreen('<span style="color: red;">链接失败,请确认是否已经有人链接此设备!</span> ');
-    }
+            function onOpen(evt) {
+                doSend("WebSocket rocks");
+                writeToScreen("开始链接设备,请耐心等待");
+            }
 
-    function doSend(message) {
-        writeToScreen("SENT: " + message);
-        websocket.send(message);
-    }
+            function onClose(evt) {
+                writeToScreen("链接关闭!");
+            }
 
-    function writeToScreen(message) {
-        var pre = document.createElement("p");
-        pre.style.wordWrap = "break-word";
-        pre.innerHTML = message;
-        output.appendChild(pre);
-    }
+            function onMessage(evt) {
 
-    window.addEventListener("load", init, false);
-</script>
+                if (typeof (evt.data) == "string") {
+                    writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
+                } else {
+                    var image = new Image();
+
+                    image.onload = function () {
+                        context.clearRect(0, 0, cWidth, cHeight);
+                        context.drawImage(image, 0, 0, cWidth, cHeight);
+                        window.URL.revokeObjectURL(image.src)
+                    }
+                    image.src = URL.createObjectURL(evt.data);
+                }
+
+            }
+
+            function onError(evt) {
+                writeToScreen('<span style="color: red;">链接失败,请确认是否已经有人链接此设备!</span> ');
+            }
+
+            function doSend(message) {
+                writeToScreen("SENT: " + message);
+                websocket.send(message);
+            }
+
+            function writeToScreen(message) {
+                var pre = document.createElement("p");
+                pre.style.wordWrap = "break-word";
+                pre.innerHTML = message;
+                output.appendChild(pre);
+
+            }
+
+            var mousedown = false;
+            canvas.onmousedown = function (e) {
+
+
+                var e = window.event || e
+                var rect = this.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;//获取鼠标在canvsa中的坐标
+                var mouseY = e.clientY - rect.top;
+
+                console.log(mouseX + "," + mouseY);
+
+                doSend("1:" + mouseX + "," + mouseY);
+
+                mousedown = true;
+
+            }
+
+            canvas.onmouseout = function (e) {
+                if (mousedown != true) return;
+                mousedown = false;
+                doSend("2:up");
+            }
+
+            canvas.onmouseup = function (e) {
+                if (mousedown != true) return;
+                mousedown = false;
+                doSend("2:up");
+            }
+
+            canvas.onmousemove = function (e) {
+
+                if (mousedown != true) return;
+                var e = window.event || e
+
+                var rect = this.getBoundingClientRect();
+
+                var mouseX = e.clientX - rect.left;//获取鼠标在canvsa中的坐标
+
+                var mouseY = e.clientY - rect.top;
+
+                doSend("3:" + mouseX + "," + mouseY);
+
+            }
+
+
+            startWebSocket();
+
+        })
+
+    </script>
+}

@@ -134,7 +134,7 @@ namespace Devices
 
             minitouch = new MiniTouchStream();
 
-            var MINITOUCH_FILE_PATH = Path.Combine(MiniLibPath, $"Lib/minitouch/{abi}/minitouch");
+            var MINITOUCH_FILE_PATH = Path.Combine(MiniLibPath, $"minitouch/{abi}/minitouch");
 
             pushFile(MINITOUCH_FILE_PATH, jarpath);
 
@@ -180,7 +180,7 @@ namespace Devices
         /// 按下
         /// </summary>
         public void TouchDown(int X, int Y) {
-            minitouch.TouchDown(X, Y);
+            minitouch.TouchDown(X* scale, Y* scale);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Devices
         /// 移动
         /// </summary>
         public void TouchMove(int X, int Y) {
-            minitouch.TouchMove(X,Y);
+            minitouch.TouchMove(X* scale, Y* scale);
         }
 
 

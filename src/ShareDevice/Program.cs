@@ -17,7 +17,7 @@ namespace ShareDevice
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 
-
+  
 
             var ads = AndroidDevice.getAllDevices();
             if (ads.Count > 0) {
@@ -25,6 +25,8 @@ namespace ShareDevice
                 Controllers.HomeController.ad.MiniLibPath = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib");
 
                 Controllers.HomeController.ad.InitMinicap();
+
+                Controllers.HomeController.ad.InitMiniTouch();
             }
 
             var host = new WebHostBuilder()
