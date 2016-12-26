@@ -76,7 +76,7 @@ namespace ShareDevice.Controllers {
                 ad.StopMinicap();
                 ad.StopMiniTouch();
 
-                
+                isClient = false;
 
 
                 Console.WriteLine("WebSocketCloseStatus>>>>>>>>>>>");
@@ -85,7 +85,7 @@ namespace ShareDevice.Controllers {
                 webSocket.Dispose();
                 Console.WriteLine("Finished");
 
-                isClient = false;
+                
 
             } else {
                 await Request.HttpContext.Response.WriteAsync("请使用Websocekt进行连接!");

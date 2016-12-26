@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using System.Text;
 using System.Diagnostics;
 using Devices;
+using Microsoft.Extensions.Configuration;
 
 namespace ShareDevice
 {
@@ -21,7 +22,11 @@ namespace ShareDevice
 
             var ads = AndroidDevice.getAllDevices();
             if (ads.Count > 0) {
+                
                 var device = ads.First();
+
+                Console.WriteLine($"开始共享手机 {device.deviceName} ...");
+
                 Controllers.HomeController.ad = device;
                 device.MiniLibPath = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib");
 
@@ -33,14 +38,22 @@ namespace ShareDevice
                 
                 //device.StartMiniTouchServer();
             } else {
-
+                Console.WriteLine("没有发现可用设备.按任意键结束...");
+                Console.ReadKey();
+                return;
             }
+
+
+            var config = new ConfigurationBuilder()
+               .SetBasePath(Directory.GetCurrentDirectory())
+               .AddJsonFile("hosting.json", optional: true)
+               .Build();
 
             var host = new WebHostBuilder()
                 .UseKestrel()
-                //.UseUrls("http://*:5000") //手动配置
+                .UseUrls("http://*:5020") //手动配置
+                //.UseConfiguration(config) //配置文件
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
                 .UseStartup<Startup>()
                 .Build();
 
