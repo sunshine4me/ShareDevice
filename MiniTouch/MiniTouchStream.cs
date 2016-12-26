@@ -16,8 +16,6 @@ namespace MiniTouch {
      
         private Socket minitouhSocket;
 
-
-        private Process minitouhServerProcess;
         private Banner Banner;
 
 
@@ -27,7 +25,7 @@ namespace MiniTouch {
         }
 
 
-        public void StartServer() {
+        public void Start() {
             
 
             minitouhSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -42,11 +40,7 @@ namespace MiniTouch {
 
             }
 
-            try {
-                minitouhServerProcess.Kill();
-            } catch (Exception) {
-                
-            }
+         
         }
 
 

@@ -89,7 +89,13 @@ namespace Devices
             virtualwidth = width / scale;
             virtualheight = height / scale;
 
+
+            
+
         }
+
+
+        
 
         public MinicapEventHandler SetMinicapEvent {
             set {
@@ -98,13 +104,13 @@ namespace Devices
             }
         }
 
+        
 
         public void InitMinicap() {
 
+            adbByDevice("forward --remove tcp:1313").Wait();
+
             minicap = new MinicapStream();
-
-
-
             
 
             var MINICAP_FILE_PATH = Path.Combine(MiniLibPath, $"minicap/bin/{abi}/minicap");
@@ -117,11 +123,21 @@ namespace Devices
             adbByDevice($"shell chmod 777 {jarpath}/minicap").Wait();
 
 
-            Shell("adb", "forward --remove-all").Wait();
+            //Shell("adb", "forward --remove-all").Wait();
 
             string command = $"forward tcp:{minicap.PORT} localabstract:minicap";
+           
             adbByDevice(command).Wait();
 
+
+            
+
+
+
+        }
+
+
+        public void StartMinicapServer() {
 
             string tmp = $"-s {deviceName} shell LD_LIBRARY_PATH={jarpath} /data/local/tmp/minicap -P {width}x{height}@{virtualwidth}x{virtualheight}/{orientation}";
             //string tmp = string.Format("shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 1080x1920@360x640/0");
@@ -129,16 +145,12 @@ namespace Devices
             //启动server
             minicapServerProcess = StartProcess("adb", tmp);
 
-
-
         }
 
         /// <summary>
         /// 启动截图相关服务
         /// </summary>
         public void StartMinicap() {
-
-          
             minicap.Run();
         }
 
@@ -148,7 +160,6 @@ namespace Devices
                 minicapServerProcess.Kill();
             } catch (Exception) {
 
-
             }
         }
 
@@ -156,6 +167,8 @@ namespace Devices
 
 
         public void InitMiniTouch() {
+
+            adbByDevice("forward --remove tcp:1111").Wait();
 
             minitouch = new MiniTouchStream();
 
@@ -170,24 +183,35 @@ namespace Devices
 
             adbByDevice(forward).Wait();
 
+            
+
+
+
+        }
+
+        public void StartMiniTouchServer() {
             string serverCommand = $"-s {deviceName} shell {jarpath}/minitouch";
 
             //启动server
             minitouhServerProcess = StartProcess("adb", serverCommand);
-
-
-
+            
         }
 
         /// <summary>
         /// 启动点击相关的服务
         /// </summary>
         public void StartMiniTouch() {
-            minitouch.StartServer();
+
+            minitouch.Start();
         }
 
         public void StopMiniTouch() {
             minitouch.Stop();
+            try {
+                minitouhServerProcess.Kill();
+            } catch (Exception) {
+
+            }
         }
 
 

@@ -36,11 +36,7 @@ namespace Minicap
 
         private Task ReadImageStreamTask;
 
-
-
-
-
-      
+        
 
         public MinicapStream() {
             PORT = 1313;

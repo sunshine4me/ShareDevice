@@ -31,6 +31,8 @@ namespace ShareDevice.Controllers {
                     return;
                 }
 
+                ad.StartMinicapServer();
+                ad.StartMiniTouchServer();
 
                 var webSocket = await Request.HttpContext.WebSockets.AcceptWebSocketAsync();
 
@@ -39,6 +41,7 @@ namespace ShareDevice.Controllers {
                 byte[] bufer = new byte[128];
                 var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(bufer), CancellationToken.None);
 
+                
 
                 ad.SetMinicapEvent = delegate (byte[] imgByte) {
                     webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None);
@@ -46,9 +49,16 @@ namespace ShareDevice.Controllers {
                 };
 
 
+                Thread.Sleep(3000);
+
+                
+
                 ad.StartMinicap();
 
                 ad.StartMiniTouch();
+
+                await webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以执行操作!")), WebSocketMessageType.Text, true, CancellationToken.None);
+
 
 
                 while (true) {
@@ -66,7 +76,7 @@ namespace ShareDevice.Controllers {
                 ad.StopMinicap();
                 ad.StopMiniTouch();
 
-                isClient = false;
+                
 
 
                 Console.WriteLine("WebSocketCloseStatus>>>>>>>>>>>");
@@ -75,7 +85,7 @@ namespace ShareDevice.Controllers {
                 webSocket.Dispose();
                 Console.WriteLine("Finished");
 
-
+                isClient = false;
 
             } else {
                 await Request.HttpContext.Response.WriteAsync("请使用Websocekt进行连接!");

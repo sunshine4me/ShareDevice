@@ -21,12 +21,19 @@ namespace ShareDevice
 
             var ads = AndroidDevice.getAllDevices();
             if (ads.Count > 0) {
-                Controllers.HomeController.ad = ads.First();
-                Controllers.HomeController.ad.MiniLibPath = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib");
+                var device = ads.First();
+                Controllers.HomeController.ad = device;
+                device.MiniLibPath = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib");
 
-                Controllers.HomeController.ad.InitMinicap();
+                device.InitMinicap();
 
-                Controllers.HomeController.ad.InitMiniTouch();
+                //device.StartMinicapServer();
+
+                device.InitMiniTouch();
+                
+                //device.StartMiniTouchServer();
+            } else {
+
             }
 
             var host = new WebHostBuilder()
