@@ -11,7 +11,9 @@ namespace MiniTouch {
     public class MiniTouchStream {
         //定义IP和监听的端口
         private String IP = "127.0.0.1";
-        private int PORT = 1111;
+
+        public int PORT { get; private set; }
+     
         private Socket minitouhSocket;
 
 
@@ -20,19 +22,13 @@ namespace MiniTouch {
 
 
 
-
+        public MiniTouchStream() {
+            PORT = 1111;
+        }
 
 
         public void StartServer() {
-            string forward = string.Format("forward tcp:{0} localabstract:minitouch", PORT);
-
-            Shell("adb", forward).Wait();
-            string serverCommand = string.Format("shell /data/local/tmp/minitouch");
-
-            //启动server
-            minitouhServerProcess = StartProcess("adb", serverCommand);
-
-            Thread.Sleep(3000);
+            
 
             minitouhSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             minitouhSocket.Connect(new IPEndPoint(IPAddress.Parse(IP), PORT));

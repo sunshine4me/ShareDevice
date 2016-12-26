@@ -22,7 +22,9 @@ namespace Minicap
 
         //定义IP和监听的端口
         private String IP = "127.0.0.1";
-        private int PORT = 1313;
+
+        public int PORT { get; private set; }
+
 
         //用于存放banner头信息
         private Banner banner = new Banner();
@@ -30,23 +32,19 @@ namespace Minicap
         byte[] chunk = new byte[4096];
 
 
-        private Process minicapServerProcess;
+
 
         private Task ReadImageStreamTask;
 
 
-        //Minicap 配置相关
-        public int width { get; set; }
-        public int height { get; set; }
-        public int virtualwidth { get; set; }
-        public int virtualheight { get; set; }
-        /// <summary>
-        /// jar包存放位置
-        /// </summary>
-        public string MINICAP_DEVICE_PATH { get; set; }
 
-        readonly private int orientation = 0;//旋转角度?
+
+
       
+
+        public MinicapStream() {
+            PORT = 1313;
+        }
 
 
         /// <summary>
@@ -55,20 +53,9 @@ namespace Minicap
         public void Run() {
 
 
-            Shell("adb", "forward --remove-all").Wait();
+            
 
-            string command = string.Format("forward tcp:{0} localabstract:minicap", 1313);
-            Shell("adb", command).Wait();
-
-
-            string tmp = string.Format("shell LD_LIBRARY_PATH={0} /data/local/tmp/minicap -P {1}x{2}@{3}x{4}/{5}", MINICAP_DEVICE_PATH, width, height, virtualwidth, virtualheight, orientation);
-            //string tmp = string.Format("shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 1080x1920@360x640/0");
-
-            //启动server
-            minicapServerProcess = StartProcess("adb", tmp);
-
-
-            Thread.Sleep(3000);
+            
             //启动socket连接
             minicapSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             minicapSocket.Connect(new IPEndPoint(IPAddress.Parse(IP), PORT));
@@ -94,12 +81,7 @@ namespace Minicap
 
             }
 
-            try {
-                minicapServerProcess.Kill();
-            } catch (Exception) {
-
-               
-            }
+          
             ReadImageStreamTask.Wait();
 
             clearPushEvent();
@@ -261,14 +243,6 @@ namespace Minicap
         }
 
 
-        private Process StartProcess(string fileName, string arguments) {
-
-
-            var psi = new ProcessStartInfo(fileName, arguments);
-            psi.RedirectStandardOutput = true;
-
-
-            return Process.Start(psi);
-        }
+       
     }
 }

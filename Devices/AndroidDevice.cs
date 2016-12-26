@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Devices
@@ -24,6 +25,10 @@ namespace Devices
         private MinicapStream minicap;
 
         private MiniTouchStream minitouch;
+
+        private Process minicapServerProcess;
+
+        private Process minitouhServerProcess;
 
         readonly string jarpath = "/data/local/tmp";
 
@@ -63,7 +68,7 @@ namespace Devices
         readonly private string GET_DEVICE_SDK_COMMAND = "shell getprop ro.build.version.sdk";
 
 
-
+        readonly private int orientation = 0;//旋转角度?
 
 
         public AndroidDevice(string _deviceName) {
@@ -72,11 +77,11 @@ namespace Devices
 
             deviceName = _deviceName;
 
-            abi = Shell("adb", GET_DEVICE_ABI_COMMAND).Result.Trim();
-            sdk = Shell("adb", GET_DEVICE_SDK_COMMAND).Result.Trim();
+            abi = adbByDevice(GET_DEVICE_ABI_COMMAND).Result.Trim();
+            sdk = adbByDevice(GET_DEVICE_SDK_COMMAND).Result.Trim();
 
 
-            var result = Shell("adb", GET_SIZE_COMMAND).Result;
+            var result = adbByDevice(GET_SIZE_COMMAND).Result;
             Match match = Regex.Match(result, @"\d{3,4}\,\d{3,4}");
             string size = match.Groups[0].Value;
             width = Convert.ToInt32(size.Split(',').ToArray()[0]);
@@ -97,11 +102,7 @@ namespace Devices
         public void InitMinicap() {
 
             minicap = new MinicapStream();
-            minicap.MINICAP_DEVICE_PATH = jarpath;
-            minicap.width = this.width;
-            minicap.height = this.height;
-            minicap.virtualwidth = this.virtualwidth;
-            minicap.virtualheight = this.virtualheight;
+
 
 
             
@@ -109,10 +110,26 @@ namespace Devices
             var MINICAP_FILE_PATH = Path.Combine(MiniLibPath, $"minicap/bin/{abi}/minicap");
             var MINICAPSO_FILE_PATH = Path.Combine(MiniLibPath, $"minicap/shared/android-{sdk}/{abi}/minicap.so");
 
+
             pushFile(MINICAP_FILE_PATH, jarpath);
             pushFile(MINICAPSO_FILE_PATH, jarpath);
 
-            Shell("adb", $"shell chmod 777 {jarpath}/minicap").Wait();
+            adbByDevice($"shell chmod 777 {jarpath}/minicap").Wait();
+
+
+            Shell("adb", "forward --remove-all").Wait();
+
+            string command = $"forward tcp:{minicap.PORT} localabstract:minicap";
+            adbByDevice(command).Wait();
+
+
+            string tmp = $"-s {deviceName} shell LD_LIBRARY_PATH={jarpath} /data/local/tmp/minicap -P {width}x{height}@{virtualwidth}x{virtualheight}/{orientation}";
+            //string tmp = string.Format("shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 1080x1920@360x640/0");
+
+            //启动server
+            minicapServerProcess = StartProcess("adb", tmp);
+
+
 
         }
 
@@ -120,11 +137,19 @@ namespace Devices
         /// 启动截图相关服务
         /// </summary>
         public void StartMinicap() {
+
+          
             minicap.Run();
         }
 
         public void StopMinicap() {
             minicap.Stop();
+            try {
+                minicapServerProcess.Kill();
+            } catch (Exception) {
+
+
+            }
         }
 
 
@@ -138,7 +163,19 @@ namespace Devices
 
             pushFile(MINITOUCH_FILE_PATH, jarpath);
 
-            Shell("adb", $"shell chmod 777 {jarpath}/minitouch").Wait();
+            adbByDevice($"shell chmod 777 {jarpath}/minitouch").Wait();
+
+
+            string forward = string.Format("forward tcp:{0} localabstract:minitouch", minitouch.PORT);
+
+            adbByDevice(forward).Wait();
+
+            string serverCommand = $"-s {deviceName} shell {jarpath}/minitouch";
+
+            //启动server
+            minitouhServerProcess = StartProcess("adb", serverCommand);
+
+
 
         }
 
@@ -198,6 +235,36 @@ namespace Devices
         }
 
 
+      
+
+        private Process StartProcess(string fileName, string arguments) {
+            
+            var psi = new ProcessStartInfo(fileName, arguments);
+            psi.RedirectStandardOutput = false;
+
+
+            return Process.Start(psi);
+        }
+
+
+      
+
+        /// <summary>
+        /// push文件到手机
+        /// </summary>
+        /// <param name="localpath">文件地址</param>
+        /// <param name="devicepath">手机位置</param>
+        private void pushFile(string localpath, string devicepath) {
+            Shell("adb", $"-s {deviceName} push {localpath} {devicepath}").Wait();
+        }
+
+
+
+        private async Task<string> adbByDevice(string arguments) {
+            return await Shell("adb", $"-s {deviceName} {arguments}");
+        }
+
+
         private static async Task<string> Shell(string fileName, string arguments) {
 
             return await Task.Run(() => {
@@ -206,7 +273,9 @@ namespace Devices
                     psi.RedirectStandardOutput = true;
 
                     using (var process = Process.Start(psi)) {
-                        return process.StandardOutput.ReadToEnd();
+                        string rt = process.StandardOutput.ReadToEnd();
+                        Console.WriteLine(rt);
+                        return rt;
                     }
                 } catch (Exception e) {
 
@@ -215,16 +284,6 @@ namespace Devices
 
             });
         }
-
-        /// <summary>
-        /// push文件到手机
-        /// </summary>
-        /// <param name="localpath">文件地址</param>
-        /// <param name="devicepath">手机位置</param>
-        private static void pushFile(string localpath, string devicepath) {
-            Shell("adb", $"push {localpath} {devicepath}").Wait();
-        }
-
 
     }
 }
