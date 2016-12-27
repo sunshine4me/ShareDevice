@@ -52,7 +52,7 @@
   "publishOptions": {
     "include": [
       "wwwroot",
-      "Views/*",
+      "Views",
       "appsettings.json",
       "web.config",
       "MiniLib"
