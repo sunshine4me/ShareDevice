@@ -53,6 +53,7 @@
     "include": [
       "wwwroot",
       "Views",
+      "hosting.json",
       "appsettings.json",
       "web.config",
       "MiniLib"
