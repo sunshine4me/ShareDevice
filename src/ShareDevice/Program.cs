@@ -17,8 +17,12 @@ namespace ShareDevice
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+            
 
-  
+            if(Environment.ExpandEnvironmentVariables("%ANDROID_HOME%")== "%ANDROID_HOME%"){
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("warring : 未检测 %ANDROID_HOME% 环境变量!");
+            }
 
             var ads = AndroidDevice.getAllDevices();
             if (ads.Count > 0) {
@@ -38,7 +42,8 @@ namespace ShareDevice
                 
                 //device.StartMiniTouchServer();
             } else {
-                Console.WriteLine("没有发现可用设备.按任意键结束...");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("error:没有发现可用设备.按任意键结束...");
                 Console.ReadKey();
                 return;
             }
