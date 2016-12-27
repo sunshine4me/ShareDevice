@@ -52,17 +52,17 @@
   "publishOptions": {
     "include": [
       "wwwroot",
-      "Views/*.cshtml",
+      "Views/*",
       "appsettings.json",
       "web.config",
       "MiniLib"
     ]
   },
 
-  "scripts": {
-    "prepublish": [ "bower install", "dotnet bundle" ],
-    "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
-  },
+  //"scripts": {
+  //  "prepublish": [ "bower install", "dotnet bundle" ],
+  //  "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
+  //},
 
   "runtimes": {
     "win7-x86": {},

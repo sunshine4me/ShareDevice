@@ -51,8 +51,8 @@ namespace ShareDevice
 
             var host = new WebHostBuilder()
                 .UseKestrel()
-                .UseUrls("http://*:5020") //手动配置
-                //.UseConfiguration(config) //配置文件
+                //.UseUrls("http://*:5020") //手动配置
+                .UseConfiguration(config) //配置文件
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseStartup<Startup>()
                 .Build();

@@ -11,7 +11,7 @@
 
     <div class="col-md-6">
         <h2>Action Information</h2>
-        <div id="output" class="pre-scrollable"></div>
+        <div id="output" style="max-height: 600px; overflow-y: scroll;"></div>
     </div>
 </div>
 
@@ -27,7 +27,7 @@
             document.onselectstart = function () { return false; };
             document.onselect = function () { return false; };
             
-            var wsUri = "ws://localhost:5020/Websocket";
+            var wsUri = "ws://" + window.location.host + "/Websocket";
 
             var canvas = document.getElementById("Canvas");
             var context = canvas.getContext("2d");
@@ -62,7 +62,7 @@
             }
 
             function onClose(evt) {
-                writeToScreen("链接关闭!");
+                writeToScreen('<span style="color: red;">链接关闭!</span> ');
             }
 
             function onMessage(evt) {
@@ -86,12 +86,14 @@
             }
 
             function onError(evt) {
+                $("#loading").fadeOut(300);
                 writeToScreen('<span style="color: red;">链接失败,请确认是否已经有人链接此设备!</span> ');
+                
             }
 
             function doSend(message) {
-                writeToScreen("SENT: " + message);
                 websocket.send(message);
+                writeToScreen("SENT: " + message);
             }
             function doSendNoWrite(message) {
                 websocket.send(message);
@@ -102,7 +104,7 @@
                 pre.style.wordWrap = "break-word";
                 pre.innerHTML = message;
                 output.appendChild(pre);
-
+                output.scrollTop = output.scrollHeight;
             }
 
             var mousedown = false;
@@ -152,7 +154,7 @@
             //确保服务器已经释放相关资源
             setTimeout(function () {
                 startWebSocket();
-            }, 1000);
+            }, 500);
             
 
         })
