@@ -1,6 +1,7 @@
 ﻿body {
     padding-top: 50px;
     padding-bottom: 20px;
+    background: #e3e3e3;
 }
 
 /* Wrapping element */
@@ -35,4 +36,14 @@ textarea {
   .carousel-caption {
     display: none
   }
+}
+
+.phoneKeyBar {
+    width:100%;
+    padding:0px 50px;
+}
+
+.phoneKeyBar button{
+    font-size: 18px !important;
+    width:33.33333%;
 }

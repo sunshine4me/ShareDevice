@@ -30,6 +30,8 @@ namespace Devices
 
         private Process minitouhServerProcess;
 
+        public static string adbFile { get; set; }
+
         readonly string jarpath = "/data/local/tmp";
 
         public string deviceName { get; set; }
@@ -43,11 +45,11 @@ namespace Devices
         /// <summary>
         /// 手机实际像素 宽
         /// </summary>
-        private int width;
+        public int width { get; private set; }
         /// <summary>
         /// 手机实际像素 高
         /// </summary>
-        private int height;
+        public int height { get; private set; }
         /// <summary>
         /// 图像输出宽度
         /// </summary>
@@ -60,7 +62,13 @@ namespace Devices
         /// <summary>
         /// 图像输出比
         /// </summary>
-        public int scale { get; set; }
+        public int minicapScale { get; set; }
+
+
+        /// <summary>
+        /// 触摸坐标实际比例
+        /// </summary>
+        public int minitouchScale { get; set; }
 
 
         readonly private string GET_SIZE_COMMAND = "shell dumpsys window windows | grep mScreenRect";
@@ -71,9 +79,16 @@ namespace Devices
         readonly private int orientation = 0;//旋转角度?
 
 
+        static AndroidDevice() {
+            adbFile = "adb";
+        }
+
+
         public AndroidDevice(string _deviceName) {
 
-            scale = 3;//默认比例1:3
+            minicapScale = 2;//默认比例1:2
+
+            minitouchScale = 3;//默认比例1:3
 
             deviceName = _deviceName;
 
@@ -86,8 +101,8 @@ namespace Devices
             string size = match.Groups[0].Value;
             width = Convert.ToInt32(size.Split(',').ToArray()[0]);
             height = Convert.ToInt32(size.Split(',').ToArray()[1]);
-            virtualwidth = width / scale;
-            virtualheight = height / scale;
+            virtualwidth = width / minicapScale;
+            virtualheight = height / minicapScale;
 
 
             
@@ -123,7 +138,7 @@ namespace Devices
             adbByDevice($"shell chmod 777 {jarpath}/minicap").Wait();
 
 
-            //Shell("adb", "forward --remove-all").Wait();
+            //Shell(adbFile, "forward --remove-all").Wait();
 
             string command = $"forward tcp:{minicap.PORT} localabstract:minicap";
            
@@ -143,7 +158,7 @@ namespace Devices
             //string tmp = string.Format("shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 1080x1920@360x640/0");
 
             //启动server
-            minicapServerProcess = StartProcess("adb", tmp);
+            minicapServerProcess = StartProcess(adbFile, tmp);
 
         }
 
@@ -193,7 +208,7 @@ namespace Devices
             string serverCommand = $"-s {deviceName} shell {jarpath}/minitouch";
 
             //启动server
-            minitouhServerProcess = StartProcess("adb", serverCommand);
+            minitouhServerProcess = StartProcess(adbFile, serverCommand);
             
         }
 
@@ -218,7 +233,7 @@ namespace Devices
         public static List<AndroidDevice>  getAllDevices() {
 
 
-            var result = Shell("adb", "devices").Result;
+            var result = Shell(adbFile, "devices").Result;
 
             var rts= new List<AndroidDevice>();
 
@@ -241,7 +256,7 @@ namespace Devices
         /// 按下
         /// </summary>
         public void TouchDown(int X, int Y) {
-            minitouch.TouchDown(X* scale, Y* scale);
+            minitouch.TouchDown(X* minitouchScale, Y* minitouchScale);
         }
 
         /// <summary>
@@ -252,10 +267,17 @@ namespace Devices
         }
 
         /// <summary>
+        /// 按键
+        /// </summary>
+        public void ClickKeycode(int key) {
+            adbByDevice($"shell input keyevent {key}").Wait();
+        }
+
+        /// <summary>
         /// 移动
         /// </summary>
         public void TouchMove(int X, int Y) {
-            minitouch.TouchMove(X* scale, Y* scale);
+            minitouch.TouchMove(X* minitouchScale, Y* minitouchScale);
         }
 
 
@@ -279,13 +301,13 @@ namespace Devices
         /// <param name="localpath">文件地址</param>
         /// <param name="devicepath">手机位置</param>
         private void pushFile(string localpath, string devicepath) {
-            Shell("adb", $"-s {deviceName} push {localpath} {devicepath}").Wait();
+            Shell(adbFile, $"-s {deviceName} push {localpath} {devicepath}").Wait();
         }
 
 
 
         private async Task<string> adbByDevice(string arguments) {
-            return await Shell("adb", $"-s {deviceName} {arguments}");
+            return await Shell(adbFile, $"-s {deviceName} {arguments}");
         }
 
 

@@ -4,9 +4,14 @@
 <br />
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-md-6 text-center">
+        <img  id="phoneImg" width="@ViewBag.width" height="@ViewBag.height" />
 
-        <canvas id="Canvas" width="@ViewBag.width" height="@ViewBag.height"></canvas>
+        <div class="btn-group phoneKeyBar">
+            <button type="button" class="btn btn-primary android-menu"><i class="glyphicon glyphicon-th-list"></i></button>
+            <button type="button" class="btn btn-primary android-home"><i class="glyphicon glyphicon-home"></i></button>
+            <button type="button" class="btn btn-primary android-back"><i class="glyphicon glyphicon-chevron-left"></i></button>
+        </div>
     </div>
 
     <div class="col-md-6">
@@ -29,10 +34,12 @@
             
             var wsUri = "ws://" + window.location.host + "/Websocket";
 
-            var canvas = document.getElementById("Canvas");
-            var context = canvas.getContext("2d");
-            var cWidth = canvas.width;
-            var cHeight = canvas.height;
+            //var canvas = document.getElementById("Canvas");
+            //var context = canvas.getContext("2d");
+            //var cWidth = canvas.width;
+            //var cHeight = canvas.height;
+
+            var phoneImg = document.getElementById("phoneImg");
 
             var output = document.getElementById("output");
 
@@ -73,14 +80,16 @@
                     $("#loading").fadeOut(300);
 
                 } else {
-                    var image = new Image();
+                    //var image = new Image();
 
-                    image.onload = function () {
-                        context.clearRect(0, 0, cWidth, cHeight);
-                        context.drawImage(image, 0, 0, cWidth, cHeight);
-                        window.URL.revokeObjectURL(image.src)
-                    }
-                    image.src = URL.createObjectURL(evt.data);
+                    //image.onload = function () {
+                    //    context.clearRect(0, 0, cWidth, cHeight);
+                    //    context.drawImage(image, 0, 0, cWidth, cHeight);
+                    //    window.URL.revokeObjectURL(image.src)
+                    //}
+                    
+                    //image.src = URL.createObjectURL(evt.data);
+                    phoneImg.src = URL.createObjectURL(evt.data);
                 }
 
             }
@@ -108,15 +117,14 @@
             }
 
             var mousedown = false;
-            canvas.onmousedown = function (e) {
+            phoneImg.onmousedown = function (e) {
 
 
-                var e = window.event || e
+                if (e.button == 2) return;
                 var rect = this.getBoundingClientRect();
                 var mouseX = e.clientX - rect.left;//获取鼠标在canvsa中的坐标
                 var mouseY = e.clientY - rect.top;
 
-                console.log(mouseX + "," + mouseY);
 
                 doSend("1:" + mouseX + "," + mouseY);
 
@@ -124,20 +132,23 @@
 
             }
 
-            canvas.onmouseout = function (e) {
+            phoneImg.onmouseout = function (e) {
+                if (e.button == 2) return;
+
                 if (mousedown != true) return;
                 mousedown = false;
                 doSend("2:up");
             }
 
-            canvas.onmouseup = function (e) {
+            phoneImg.onmouseup = function (e) {
+                if (e.button == 2) return;
                 if (mousedown != true) return;
                 mousedown = false;
                 doSend("2:up");
             }
 
-            canvas.onmousemove = function (e) {
-
+            phoneImg.onmousemove = function (e) {
+                if (e.button == 2) return;
                 if (mousedown != true) return;
                 var e = window.event || e
 
@@ -150,6 +161,21 @@
                 doSendNoWrite("3:" + mouseX + "," + mouseY);
 
             }
+
+
+            $(".android-menu").click(function () {
+                doSend("4:82");
+            })
+
+            $(".android-home").click(function () {
+                doSend("4:3");
+            })
+
+            $(".android-back").click(function () {
+                doSend("4:4");
+            })
+
+
 
             //确保服务器已经释放相关资源
             setTimeout(function () {

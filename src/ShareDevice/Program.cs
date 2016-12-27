@@ -17,11 +17,13 @@ namespace ShareDevice
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            
 
-            if(Environment.ExpandEnvironmentVariables("%ANDROID_HOME%")== "%ANDROID_HOME%"){
+            //bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+
+            if (Environment.ExpandEnvironmentVariables("%ANDROID_HOME%")== "%ANDROID_HOME%"){
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("warring : 未检测 %ANDROID_HOME% 环境变量!");
+                AndroidDevice.adbFile = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib/adb");
             }
 
             var ads = AndroidDevice.getAllDevices();

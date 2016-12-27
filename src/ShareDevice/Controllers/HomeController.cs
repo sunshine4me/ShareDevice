@@ -13,8 +13,8 @@ namespace ShareDevice.Controllers {
         public static AndroidDevice ad;
 
         public IActionResult Index() {
-            ViewBag.width = ad.virtualwidth;
-            ViewBag.height = ad.virtualheight;
+            ViewBag.width = ad.width / ad.minitouchScale;
+            ViewBag.height = ad.height / ad.minitouchScale;
             return View();
         }
 
@@ -125,6 +125,9 @@ namespace ShareDevice.Controllers {
                     break;
                 case "2":
                     ad.TouchUp();
+                    break;
+                case "4":
+                    ad.ClickKeycode(Convert.ToInt32(strArry[1]));
                     break;
                 default:
                     break;
