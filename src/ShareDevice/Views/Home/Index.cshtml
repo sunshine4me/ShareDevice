@@ -63,7 +63,13 @@
             }
 
             function onOpen(evt) {
-                doSend("WebSocket rocks");
+
+                if (confirm("您想进行手机控制吗?")) {
+                    doSend("control");
+                } else {
+                    doSend("view");
+                }
+                
                 writeToScreen("手机信号加载中,请耐心等待...");
                 
             }

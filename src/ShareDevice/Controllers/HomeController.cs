@@ -19,73 +19,70 @@ namespace ShareDevice.Controllers {
         }
 
 
-        private static bool isClient;
+        private static bool isControl;
+
 
         [Route("Websocket")]
         public async Task Websocket() {
 
             if (Request.HttpContext.WebSockets.IsWebSocketRequest) {
 
-                //先1V1 不给多人连接,我觉得应该 lock 一下这个变量
-                if (isClient) {
-                    return;
-                }
-
-                ad.StartMinicapServer();
-                ad.StartMiniTouchServer();
 
                 var webSocket = await Request.HttpContext.WebSockets.AcceptWebSocketAsync();
 
-                isClient = true;
 
-                byte[] bufer = new byte[128];
-                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(bufer), CancellationToken.None);
+               
 
-                
-
-                ad.SetMinicapEvent = delegate (byte[] imgByte) {
+                //添加图像输出事件
+                var MinicapEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
                     webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None);
-
-                };
-
-
-                Thread.Sleep(3000);
-
-                
-
-                ad.StartMinicap();
-
-                ad.StartMiniTouch();
-
-                await webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以执行操作!")), WebSocketMessageType.Text, true, CancellationToken.None);
+                });
 
 
 
-                while (true) {
-                    byte[] ReceiveBuffer = new byte[128];
-                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(ReceiveBuffer), CancellationToken.None);
+                byte[] buffer = new byte[128];
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                if (System.Text.Encoding.UTF8.GetString(buffer).TrimEnd('\0') == "control" && isControl == false) {
+                    isControl = true;
+                    ad.StartMinicapServer();
+                    ad.StartMiniTouchServer();
+                    //确保服务已经开启
+                    Thread.Sleep(3000);
+                    ad.StartMinicap();
+                    ad.StartMiniTouch();
 
-                    if (result.CloseStatus.HasValue) break;
+                    await webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以执行操作!")), WebSocketMessageType.Text, true, CancellationToken.None);
 
+                    while (true) {
+                        byte[] ReceiveBuffer = new byte[128];
+                        result = await webSocket.ReceiveAsync(new ArraySegment<byte>(ReceiveBuffer), CancellationToken.None);
 
-                    TouchEvent(ReceiveBuffer);
+                        if (result.CloseStatus.HasValue) break;
+                        TouchEvent(ReceiveBuffer);
+                    }
 
+                    ad.RemoveMinicapEvent(MinicapEvent);
+
+                    ad.StopMinicap();
+                    ad.StopMiniTouch();
+
+                    isControl = false;
+
+                } else {
+
+                    await webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("确认操作者后会显示手机图像,请耐心等待!")), WebSocketMessageType.Text, true, CancellationToken.None);
+
+                    while (true) {
+                        byte[] ReceiveBuffer = new byte[128];
+                        result = await webSocket.ReceiveAsync(new ArraySegment<byte>(ReceiveBuffer), CancellationToken.None);
+
+                        if (result.CloseStatus.HasValue) break;
+                    }
+                    ad.RemoveMinicapEvent(MinicapEvent);
 
                 }
-
-                ad.StopMinicap();
-                ad.StopMiniTouch();
-
-                isClient = false;
-
-
-                Console.WriteLine("WebSocketCloseStatus>>>>>>>>>>>");
                 await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-
                 webSocket.Dispose();
-                Console.WriteLine("Finished");
-
-                
 
             } else {
                 await Request.HttpContext.Response.WriteAsync("请使用Websocekt进行连接!");

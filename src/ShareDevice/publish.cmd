@@ -40,11 +40,11 @@ if %input%==7 (
 if %input%==0 (
 	dotnet publish -r win7-x64 -c release
 	dotnet publish -r win10-x64 -c release
-	dotnet publish -r centos.7-x64 -c release
-	dotnet publish -r osx.10.10-x64 -c release
+	rem dotnet publish -r centos.7-x64 -c release
+	rem dotnet publish -r osx.10.10-x64 -c release
 	dotnet publish -r osx.10.11-x64 -c release
 	dotnet publish -r osx.10.12-x64 -c release
-	dotnet publish -r win7-x86 -c release
+	rem dotnet publish -r win7-x86 -c release
 ) 
 
 

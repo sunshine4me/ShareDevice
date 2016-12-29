@@ -110,16 +110,27 @@ namespace Devices
         }
 
 
-        
 
-        public MinicapEventHandler SetMinicapEvent {
-            set {
-                minicap.clearPushEvent();
-                minicap.push += value;
-            }
+        /// <summary>
+        /// 为Minicap添加push 事件
+        /// </summary>
+        public MinicapEventHandler AddMinicapEvent (MinicapEventHandler e) {
+           
+            //minicap.clearPushEvent();
+            minicap.push += e;
+
+            return e;
         }
 
-        
+
+
+
+        public void RemoveMinicapEvent(MinicapEventHandler e) {
+
+            minicap.push -= e;
+        }
+
+
 
         public void InitMinicap() {
 
