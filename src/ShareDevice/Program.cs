@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Devices;
 using Microsoft.Extensions.Configuration;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace ShareDevice
 {
@@ -23,11 +24,15 @@ namespace ShareDevice
 
             //bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
-            if (Environment.ExpandEnvironmentVariables("%ANDROID_HOME%")== "%ANDROID_HOME%"){
+            if (Environment.ExpandEnvironmentVariables("%ANDROID_HOME3%")== "%ANDROID_HOME3%"){
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("warring : 未检测到 %ANDROID_HOME% 环境变量,启用本地adb程序!");
                 Console.ForegroundColor = ConsoleColor.White;
-                AndroidDevice.adbFile = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib/adb");
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    AndroidDevice.adbFile = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib/adb.exe");
+                } else {
+                    AndroidDevice.adbFile = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib/adb");
+                }
             }
 
             var ads = AndroidDevice.getAllDevices();

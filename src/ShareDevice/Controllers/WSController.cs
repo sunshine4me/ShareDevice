@@ -68,7 +68,7 @@ namespace ShareDevice.Controllers
                 var result = webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
 
-                webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经链接手机图像,请耐心等待!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+                webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经链接手机,请耐心等待图像传输!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
                 while (true) {
                     byte[] ReceiveBuffer = new byte[64];
@@ -103,7 +103,7 @@ namespace ShareDevice.Controllers
 
                 webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以进行操控!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
-                webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("如图像长时间未显示,请尝试点击屏幕或按下home键!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+                webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("如长时间未显示图像,请尝试点击屏幕或按下home键!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
 
                 while (true) {
