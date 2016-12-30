@@ -47,3 +47,11 @@ textarea {
     font-size: 18px !important;
     width:33.33333%;
 }
+
+.key{
+    display:inline-block;
+    min-width:70px;
+    text-align:right;
+    font-weight:bold;
+    margin-right:10px;
+}

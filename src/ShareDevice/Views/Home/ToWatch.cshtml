@@ -1,0 +1,28 @@
+﻿
+<p>
+    <h2>
+        已有用户正在控制,为您自动跳转至"观看页面"
+    </h2>
+</p>
+<p>
+    <h2>
+        如不跳转请点 <a href="/Watch">这里</a>!
+    </h2>
+</p>
+
+@section Scripts {
+    <script language="javascript" type="text/javascript">
+
+
+        $(function () {
+
+            //确保服务器已经释放相关资源
+            setTimeout(function () {
+                window.location.href = "/Watch";
+            }, 5000);
+
+
+        })
+
+    </script>
+}

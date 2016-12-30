@@ -16,11 +16,11 @@ namespace Devices
         /// <summary>
         /// CPU abi版本
         /// </summary>
-        private string abi;
+        public string abi { get; private set; }
         /// <summary>
         /// 系统SDK版本
         /// </summary>
-        private string sdk;
+        public string sdk { get; private set; }
 
         private MinicapStream minicap;
 
@@ -181,8 +181,8 @@ namespace Devices
         }
 
         public void StopMinicap() {
-            minicap.Stop();
             try {
+                minicap.Stop();
                 minicapServerProcess.Kill();
             } catch (Exception) {
 
@@ -232,8 +232,8 @@ namespace Devices
         }
 
         public void StopMiniTouch() {
-            minitouch.Stop();
             try {
+                minitouch.Stop();
                 minitouhServerProcess.Kill();
             } catch (Exception) {
 

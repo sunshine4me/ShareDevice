@@ -4,192 +4,80 @@
 <br />
 <div class="row">
 
-    <div class="col-md-6 text-center">
-        <img  id="phoneImg" width="@ViewBag.width" height="@ViewBag.height" />
 
-        <div class="btn-group phoneKeyBar">
-            <button type="button" class="btn btn-primary android-menu"><i class="glyphicon glyphicon-th-list"></i></button>
-            <button type="button" class="btn btn-primary android-home"><i class="glyphicon glyphicon-home"></i></button>
-            <button type="button" class="btn btn-primary android-back"><i class="glyphicon glyphicon-chevron-left"></i></button>
+    <div class="col-md-4">
+
+        <div class="list-group">
+            <div class="list-group-item active">
+                <h4 class="list-group-item-heading">
+                   <i class="glyphicon glyphicon-phone"></i> 手机参数
+                </h4>
+            </div>
+            <div class="list-group-item">
+
+                <span class="key">CPU型号:</span>
+                <span class="value">@ViewBag.CPU</span>
+            </div>
+            <div class="list-group-item">
+                <span class="key">SDK版本:</span>
+                <span class="value">@ViewBag.SDK</span>
+            </div>
+
+            <div class="list-group-item">
+                <span class="key">屏幕像素:</span>
+                <span class="value">@ViewBag.width * @ViewBag.height</span>
+            </div>
+            <div class="list-group-item">
+                <span class="key"></span>
+            </div>
+            <div class="list-group-item">
+                <span class="key"></span>
+            </div>
+            <div class="list-group-item">
+                <span class="key"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        <div class="list-group">
+            <div class="list-group-item active">
+                <h4 class="list-group-item-heading">
+                    <i class="glyphicon glyphicon-cog"></i> 远程控制
+                </h4>
+            </div>
+            <div class="list-group-item" style="text-align:center">
+                <a href="/Control">
+                    <img class="lazy" src="~/images/computer_process.png" alt="控制">
+                </a>
+               
+            </div>
+            
         </div>
     </div>
 
-    <div class="col-md-6">
-        <h2>Action Information</h2>
-        <div id="output" style="max-height: 600px; overflow-y: scroll;"></div>
+    <div class="col-md-4">
+
+        <div class="list-group">
+            <div class="list-group-item active">
+                <h4 class="list-group-item-heading">
+                    <i class="glyphicon glyphicon-eye-open"></i> 远程观看
+                </h4>
+            </div>
+            <div class="list-group-item" style="text-align:center">
+                <a href="/Watch">
+                    <img class="lazy" src="~/images/computer.png" alt="观看">
+                </a>
+               
+            </div>
+
+        </div>
     </div>
+    
+    
 </div>
 
-
-@section Scripts {
-    <script language="javascript" type="text/javascript">
-
-
-        $(function () {
-
-            document.oncontextmenu = function () { return false; };
-            document.ondragstart = function () { return false; };
-            document.onselectstart = function () { return false; };
-            document.onselect = function () { return false; };
-            
-            var wsUri = "ws://" + window.location.host + "/Websocket";
-
-            //var canvas = document.getElementById("Canvas");
-            //var context = canvas.getContext("2d");
-            //var cWidth = canvas.width;
-            //var cHeight = canvas.height;
-
-            var phoneImg = document.getElementById("phoneImg");
-
-            var output = document.getElementById("output");
-
-            var websocket;
-
-            function startWebSocket() {
-
-                websocket = new WebSocket(wsUri);
-                websocket.onopen = function (evt) {
-                    onOpen(evt)
-                };
-                websocket.onclose = function (evt) {
-                    onClose(evt)
-                };
-                websocket.onmessage = function (evt) {
-                    onMessage(evt)
-                };
-                websocket.onerror = function (evt) {
-                    onError(evt)
-                };
-            }
-
-            function onOpen(evt) {
-
-                if (confirm("您想进行手机控制吗?")) {
-                    doSend("control");
-                } else {
-                    doSend("view");
-                }
-                
-                writeToScreen("手机信号加载中,请耐心等待...");
-                
-            }
-
-            function onClose(evt) {
-                writeToScreen('<span style="color: red;">链接关闭!</span> ');
-            }
-
-            function onMessage(evt) {
-
-                if (typeof (evt.data) == "string") {
-                    writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
-
-                    $("#loading").fadeOut(300);
-
-                } else {
-                    //var image = new Image();
-
-                    //image.onload = function () {
-                    //    context.clearRect(0, 0, cWidth, cHeight);
-                    //    context.drawImage(image, 0, 0, cWidth, cHeight);
-                    //    window.URL.revokeObjectURL(image.src)
-                    //}
-                    
-                    //image.src = URL.createObjectURL(evt.data);
-                    phoneImg.src = URL.createObjectURL(evt.data);
-                }
-
-            }
-
-            function onError(evt) {
-                $("#loading").fadeOut(300);
-                writeToScreen('<span style="color: red;">链接失败,请确认是否已经有人链接此设备!</span> ');
-                
-            }
-
-            function doSend(message) {
-                websocket.send(message);
-                writeToScreen("SENT: " + message);
-            }
-            function doSendNoWrite(message) {
-                websocket.send(message);
-            }
-
-            function writeToScreen(message) {
-                var pre = document.createElement("p");
-                pre.style.wordWrap = "break-word";
-                pre.innerHTML = message;
-                output.appendChild(pre);
-                output.scrollTop = output.scrollHeight;
-            }
-
-            var mousedown = false;
-            phoneImg.onmousedown = function (e) {
-
-
-                if (e.button == 2) return;
-                var rect = this.getBoundingClientRect();
-                var mouseX = e.clientX - rect.left;//获取鼠标在canvsa中的坐标
-                var mouseY = e.clientY - rect.top;
-
-
-                doSend("1:" + mouseX + "," + mouseY);
-
-                mousedown = true;
-
-            }
-
-            phoneImg.onmouseout = function (e) {
-                if (e.button == 2) return;
-
-                if (mousedown != true) return;
-                mousedown = false;
-                doSend("2:up");
-            }
-
-            phoneImg.onmouseup = function (e) {
-                if (e.button == 2) return;
-                if (mousedown != true) return;
-                mousedown = false;
-                doSend("2:up");
-            }
-
-            phoneImg.onmousemove = function (e) {
-                if (e.button == 2) return;
-                if (mousedown != true) return;
-                var e = window.event || e
-
-                var rect = this.getBoundingClientRect();
-
-                var mouseX = e.clientX - rect.left;//获取鼠标在canvsa中的坐标
-
-                var mouseY = e.clientY - rect.top;
-
-                doSendNoWrite("3:" + mouseX + "," + mouseY);
-
-            }
-
-
-            $(".android-menu").click(function () {
-                doSend("4:82");
-            })
-
-            $(".android-home").click(function () {
-                doSend("4:3");
-            })
-
-            $(".android-back").click(function () {
-                doSend("4:4");
-            })
-
-
-
-            //确保服务器已经释放相关资源
-            setTimeout(function () {
-                startWebSocket();
-            }, 500);
-            
-
-        })
-
-    </script>
-}

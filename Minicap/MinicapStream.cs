@@ -34,6 +34,7 @@ namespace Minicap
 
 
 
+
         private Task ReadImageStreamTask;
 
         
@@ -63,6 +64,7 @@ namespace Minicap
                 } catch (Exception) {
 
                 }
+                
             });
             
         }
@@ -198,9 +200,16 @@ namespace Minicap
                         {
                             frameBody = frameBody.Concat(subByteArray(chunk, cursor, cursor + frameBodyLength)).ToArray();
 
-                            
-                            push(frameBody);
+                            if(push != null) {
+                                try {
+                                    push.Invoke(frameBody);
+                                } catch (Exception) {
 
+                                }
+                            }
+                               
+                            
+                           
                             //AddStream(frameBody);
 
                             cursor += frameBodyLength;

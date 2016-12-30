@@ -8,6 +8,7 @@ using System.Text;
 using System.Diagnostics;
 using Devices;
 using Microsoft.Extensions.Configuration;
+using System.Threading;
 
 namespace ShareDevice
 {
@@ -24,7 +25,7 @@ namespace ShareDevice
 
             if (Environment.ExpandEnvironmentVariables("%ANDROID_HOME%")== "%ANDROID_HOME%"){
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("warring : 未检测 %ANDROID_HOME% 环境变量!");
+                Console.WriteLine("warring : 未检测到 %ANDROID_HOME% 环境变量,启用本地adb程序!");
                 Console.ForegroundColor = ConsoleColor.White;
                 AndroidDevice.adbFile = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib/adb");
             }
@@ -36,16 +37,22 @@ namespace ShareDevice
 
                 Console.WriteLine($"开始共享手机 {device.deviceName} ...");
 
-                Controllers.HomeController.ad = device;
+                Controllers.WSController.ad = device;
                 device.MiniLibPath = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib");
 
                 device.InitMinicap();
 
-                //device.StartMinicapServer();
+                device.StartMinicapServer();
 
                 device.InitMiniTouch();
                 
-                //device.StartMiniTouchServer();
+                device.StartMiniTouchServer();
+
+
+                Thread.Sleep(3000);
+                device.StartMinicap();
+                device.StartMiniTouch();
+
             } else {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("error:没有发现可用设备.按任意键结束...");
@@ -70,7 +77,7 @@ namespace ShareDevice
 
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(">>>>>>>>> 服务器开启成功,请访问 http://IP:5020 进行手机访问!");
+            Console.WriteLine(">>>>>>>>> 服务器开启成功,请访问 http://电脑IP:5020 进行访问!");
             Console.ForegroundColor = ConsoleColor.White;
 
             host.Run();
