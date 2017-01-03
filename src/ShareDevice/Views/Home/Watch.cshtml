@@ -5,8 +5,7 @@
 <div class="row">
 
     <div class="col-md-6 text-center">
-        <img id="phoneImg" width="@ViewBag.width" height="@ViewBag.height" src ="data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97/e96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs=" />
-
+        <canvas id="phoneImg" width="@ViewBag.width" height="@ViewBag.height"></canvas>
     </div>
 
     <div class="col-md-6">
@@ -27,7 +26,16 @@
 
 
             var wsUri = "ws://" + window.location.host + "/WS/Watch";
+           
             var phoneImg = document.getElementById("phoneImg");
+            var context = phoneImg.getContext("2d");
+            var cWidth = phoneImg.width;
+            var cHeight = phoneImg.height;
+
+            var defultImg = new Image();
+            defultImg.src = "data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D";
+            context.drawImage(defultImg, 0, 0, cWidth, cHeight);
+
 
             var output = document.getElementById("output");
 
@@ -52,7 +60,9 @@
             function onOpen(evt) {
                 doSend("control");
                 writeToScreen("websocekt链接中,请耐心等待...");
-                $("#loading").fadeOut(300);
+                setTimeout(function () {
+                    $("#loading").fadeOut(300);
+                }, 2000);
             }
 
             function onClose(evt) {
@@ -63,7 +73,15 @@
                 if (typeof (evt.data) == "string") {
                     writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
                 } else {
-                    phoneImg.src = URL.createObjectURL(evt.data);
+                    var image = new Image();
+
+                    image.onload = function () {
+                        context.clearRect(0, 0, cWidth, cHeight);
+                        context.drawImage(image, 0, 0, cWidth, cHeight);
+                        window.URL.revokeObjectURL(image.src)
+                    }
+
+                    image.src = URL.createObjectURL(evt.data);
                 }
 
             }

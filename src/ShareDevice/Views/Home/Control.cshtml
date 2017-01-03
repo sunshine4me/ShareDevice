@@ -5,7 +5,8 @@
 <div class="row">
 
     <div class="col-md-6 text-center">
-        <img id="phoneImg" width="@ViewBag.width" height="@ViewBag.height" src="data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D" />
+        <canvas id="phoneImg" width="@ViewBag.width" height="@ViewBag.height"></canvas>
+        @*<img id="phoneImg" width="@ViewBag.width" height="@ViewBag.height" src="data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D" />*@
 
         <div class="btn-group phoneKeyBar">
             <button type="button" class="btn btn-primary android-menu" title="menu"><i class="glyphicon glyphicon-th-list"></i></button>
@@ -36,7 +37,17 @@
             document.onselect = function () { return false; };
 
             var wsUri = "ws://" + window.location.host + "/WS/Control";
+
+           
+
             var phoneImg = document.getElementById("phoneImg");
+            var context = phoneImg.getContext("2d");
+            var cWidth = phoneImg.width;
+            var cHeight = phoneImg.height;
+
+            var defultImg = new Image();
+            defultImg.src = "data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D";
+            context.drawImage(defultImg, 0, 0, cWidth, cHeight);
 
             var output = document.getElementById("output");
 
@@ -76,10 +87,19 @@
                 if (typeof (evt.data) == "string") {
                     writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
 
-                    $("#loading").fadeOut(300);
-
                 } else {
-                    phoneImg.src = URL.createObjectURL(evt.data);
+
+                    var image = new Image();
+
+                    image.onload = function () {
+                        context.clearRect(0, 0, cWidth, cHeight);
+                        context.drawImage(image, 0, 0, cWidth, cHeight);
+                        window.URL.revokeObjectURL(image.src)
+                    }
+
+                    image.src = URL.createObjectURL(evt.data);
+
+                    //phoneImg.src = URL.createObjectURL(evt.data);
                 }
 
             }

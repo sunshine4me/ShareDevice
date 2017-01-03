@@ -24,7 +24,7 @@ namespace ShareDevice
 
             //bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
-            if (Environment.ExpandEnvironmentVariables("%ANDROID_HOME3%")== "%ANDROID_HOME3%"){
+            if (Environment.ExpandEnvironmentVariables("%ANDROID_HOME%")== "%ANDROID_HOME%"){
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("warring : 未检测到 %ANDROID_HOME% 环境变量,启用本地adb程序!");
                 Console.ForegroundColor = ConsoleColor.White;

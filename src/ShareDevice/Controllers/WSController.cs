@@ -58,9 +58,14 @@ namespace ShareDevice.Controllers
         private void WatchDevice() {
 
             using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
+                bool isPush = false;
                 //添加图像输出事件
                 var MinicapEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
-                    webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None);
+                    if (!isPush) {
+                        isPush = true;
+                        webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None).Wait();
+                        isPush = false;
+                    }
                 });
 
 
@@ -88,10 +93,19 @@ namespace ShareDevice.Controllers
         [NonAction]
         private void ControlDevice() {
 
+
+
             using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
+
+                
+                bool isPush = false;
                 //添加图像输出事件
                 var MinicapEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
-                    webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None);
+                    if (!isPush) {
+                        isPush = true;
+                        webSocket.SendAsync(new ArraySegment<byte>(imgByte), WebSocketMessageType.Binary, true, CancellationToken.None).Wait();
+                        isPush = false;
+                    }
                 });
 
                 //第一次通信 暂时不做处理

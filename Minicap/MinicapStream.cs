@@ -198,11 +198,15 @@ namespace Minicap
                         //读取图片内容
                         if (len - cursor >= frameBodyLength)
                         {
+                            
                             frameBody = frameBody.Concat(subByteArray(chunk, cursor, cursor + frameBodyLength)).ToArray();
 
-                            if(push != null) {
+                            //多线程内存问题解决
+                            var tmp = (byte[])frameBody.Clone();
+
+                            if (push != null) {
                                 try {
-                                    push.Invoke(frameBody);
+                                    push.Invoke(tmp);
                                 } catch (Exception) {
 
                                 }
@@ -210,6 +214,7 @@ namespace Minicap
                                
                             
                            
+
                             //AddStream(frameBody);
 
                             cursor += frameBodyLength;
