@@ -26,6 +26,8 @@ namespace ShareDevice
                 builder.AddApplicationInsightsSettings(developerMode: true);
             }
             Configuration = builder.Build();
+
+            
         }
 
         public IConfigurationRoot Configuration { get; }
@@ -33,6 +35,10 @@ namespace ShareDevice
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            //默认图片处理格式
+            ImageSharp.Configuration.Default.AddImageFormat(new ImageSharp.Formats.JpegFormat());
+
             // Add framework services.
             services.AddApplicationInsightsTelemetry(Configuration);
 

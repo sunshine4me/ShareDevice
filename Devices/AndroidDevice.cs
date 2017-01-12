@@ -86,7 +86,7 @@ namespace Devices
 
         public AndroidDevice(string _deviceName) {
 
-            minicapScale = 2;//默认比例1:2
+            minicapScale = 3;//默认比例1:3
 
             minitouchScale = 3;//默认比例1:3
 

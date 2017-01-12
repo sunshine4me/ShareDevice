@@ -7,6 +7,10 @@ using Devices;
 using Microsoft.AspNetCore.Http;
 using System.Net.WebSockets;
 using System.Threading;
+using System.IO.Compression;
+using System.IO;
+using ImageSharp;
+using ImageSharp.Formats;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -95,9 +99,12 @@ namespace ShareDevice.Controllers
 
 
 
-            using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
+            
 
-                
+
+
+
+            using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
                 bool isPush = false;
                 //添加图像输出事件
                 var MinicapEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
@@ -108,12 +115,45 @@ namespace ShareDevice.Controllers
                     }
                 });
 
+                IImageEncoder imageEncoder = new JpegEncoder() {
+                    Quality = 50,
+                    Subsample = JpegSubsample.Ratio420
+                };
+
+
+                var vedio = ZipFile.Open(Path.Combine(Directory.GetCurrentDirectory(), $"Replay/{DateTime.Now.ToString("yyyyMMddhhmmss")}.zip"), ZipArchiveMode.Create);
+                bool isZipPush = false;
+                DateTime lastImgDate = DateTime.Now;
+                //添加图像输出事件
+                var ZipEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
+                    if (!isZipPush) {
+                        isZipPush = true;
+                        var nowDate = DateTime.Now;
+                        if ((nowDate -lastImgDate).TotalMilliseconds >300) {
+
+                            lastImgDate = nowDate;
+
+                            Image image = new Image(imgByte);
+
+                             // 添加jpg
+                            var e = vedio.CreateEntry($"{nowDate.ToString("yyyyMMddhhmmssfff")}.jpg", CompressionLevel.Optimal);
+                            using (var stream = e.Open()) {
+                                image.Save(stream, imageEncoder);
+                                //stream.Write(imgByte, 0, imgByte.Length);
+                            }
+                        }
+                        isZipPush = false;
+                    }
+                });
+
+
+
                 //第一次通信 暂时不做处理
                 byte[] buffer = new byte[64];
                 var result = webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
 
-                
+
 
                 webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以进行操控!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
@@ -130,6 +170,9 @@ namespace ShareDevice.Controllers
 
                 ad.RemoveMinicapEvent(MinicapEvent);
 
+                ad.RemoveMinicapEvent(ZipEvent);
+
+                vedio.Dispose();
 
                 webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None).Wait();
                 webSocket.Dispose();
