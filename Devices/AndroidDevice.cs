@@ -21,6 +21,11 @@ namespace Devices
         /// 系统SDK版本
         /// </summary>
         public string sdk { get; private set; }
+        /// <summary>
+        /// 手机型号
+        /// </summary>
+        public string model { get; private set; }
+        
 
         private MinicapStream minicap;
 
@@ -74,6 +79,7 @@ namespace Devices
         readonly private string GET_SIZE_COMMAND = "shell dumpsys window windows | grep mScreenRect";
         readonly private string GET_DEVICE_ABI_COMMAND = "shell getprop ro.product.cpu.abi";
         readonly private string GET_DEVICE_SDK_COMMAND = "shell getprop ro.build.version.sdk";
+        readonly private string GET_DEVICE_MODEL_COMMAND = "shell getprop ro.product.model";
 
 
         readonly private int orientation = 0;//旋转角度?
@@ -94,6 +100,7 @@ namespace Devices
 
             abi = adbByDevice(GET_DEVICE_ABI_COMMAND).Result.Trim();
             sdk = adbByDevice(GET_DEVICE_SDK_COMMAND).Result.Trim();
+            model = adbByDevice(GET_DEVICE_MODEL_COMMAND).Result.Trim();
 
 
             var result = adbByDevice(GET_SIZE_COMMAND).Result;

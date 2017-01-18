@@ -76,11 +76,11 @@ namespace Minicap {
             set;
         }
 
-        public override String ToString() {
-            return "Banner [version=" + Version + ", length=" + Length + ", pid="
-                + Pid + ", readWidth=" + RealWidth + ", readHeight="
-                + RealHeight + ", virtualWidth=" + VirtualWidth + ", virtualHeight=" + VirtualHeight + ", orientation="
-                + Orientation + ", quirks=" + Quirks + "]";
-        }
+        //public override String ToString() {
+        //    return "Banner [version=" + Version + ", length=" + Length + ", pid="
+        //        + Pid + ", readWidth=" + RealWidth + ", readHeight="
+        //        + RealHeight + ", virtualWidth=" + VirtualWidth + ", virtualHeight=" + VirtualHeight + ", orientation="
+        //        + Orientation + ", quirks=" + Quirks + "]";
+        //}
     }
 }

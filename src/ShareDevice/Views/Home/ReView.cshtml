@@ -1,0 +1,256 @@
+﻿@model List<ReViewModel>
+@{
+    ViewData["Title"] = "ReView";
+}
+<br />
+<div class="col-md-6">
+    <div class="videoList">
+        @foreach (var m in Model) {
+            <a href="#" class="list-group-item" data-file="@m.name">
+                <div><strong>@m.name</strong> </div>
+                <small class="text-muted">@m.creationTime.ToString("yyyy-MM-dd hh:mm:ss")</small>
+                <span class="badge">@(m.length / 1024) KB</span>
+            </a>
+        }
+    </div>
+</div>
+<div class="col-md-6">
+    <div class="panel panel-default">
+        <div class="panel-body">
+
+            <center>
+                <div class="panel panel-info" style="width:460px;">
+                    <div class="panel-body">
+                        <div style="margin-right:5px;" class="pull-left">
+                            <i class="glyphicon glyphicon-play" id="videoPlay"></i>
+                            <i class="glyphicon glyphicon-stop" id="videoStop" style="display:none;"></i>
+                            <i class="glyphicon glyphicon-retweet" id="videoReview" style="display:none;"></i>
+                        </div>
+                        <span class="pull-left" id="nowTime">0:00</span>
+                        <div class="progress progress-striped active pull-left" style="width:320px; margin: 0px 5px;">
+                            <div class="progress-bar progress-bar-success" role="progressbar" id="processbar"
+                                 style="width: 0%;">
+                            </div>
+                        </div>
+                        <span class="pull-left" id="totalTime">0:00</span>
+                    </div>
+                </div>
+                <canvas id="phoneCanvas"></canvas>
+                
+            </center>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jszip/jszip.min.js"></script>
+    <script src="~/lib/jszip/jszip-utils.min.js"></script>
+    <script>
+
+
+
+        var image = new Image();
+        var phoneCanvas = document.getElementById("phoneCanvas");
+        var context = phoneCanvas.getContext("2d");
+
+
+        image.onload = function () {
+            phoneCanvas.width = image.width;
+            phoneCanvas.height = image.height;
+            context.clearRect(0, 0, image.width, image.height);
+            context.drawImage(image, 0, 0, image.width, image.height);
+            window.URL.revokeObjectURL(image.src)
+        }
+        var zip;
+
+        $(".videoList a").click(function () {
+            $("#loading").fadeIn();
+
+            $(".videoList a").removeClass("active");
+            $(this).addClass("active");
+
+            $(".progress").removeClass("active");
+            $("#videoStop").hide();
+            $("#videoReview").hide();
+            $("#videoPlay").show();
+            ++playSeed;
+            clearInterval(progressTimer);
+            $("#processbar").attr("style", "width:" + 0 + "%");
+
+            zip = new JSZip();
+            JSZipUtils.getBinaryContent('/Replay/' + $(this).data("file"), function (err, data) {
+                if (err) {
+                    throw err; // or handle err
+                }
+                zip.loadAsync(data).then(function () {
+                    initVideo();
+                    $("#loading").fadeOut();
+                });
+            });
+        });
+
+        var startFrameDate;
+        var endFrameDate;
+        var totleMillisecond;//总播放时间
+
+        function initVideo() {
+            progressMillisecond = 0;
+            startFrameDate = undefined;
+
+            for (var fileName in zip.files) {
+                var frameDate = Number(fileName.substring(0, fileName.indexOf(".")));
+                if (!startFrameDate)
+                    startFrameDate = frameDate;
+                endFrameDate = frameDate;
+            }
+            $("#nowTime").html("0:00");
+            totleMillisecond = endFrameDate - startFrameDate;
+            $("#totalTime").html(formatTime(totleMillisecond));
+            var fs = Object.keys(zip.files);
+
+
+            zip.file(fs[0]).async("base64").then(function success(content) {
+                image.src = "data:image/jpeg;base64," + content;
+            })
+
+            
+
+        }
+
+        //进度条相关
+        var progressTimer;
+        var progressMillisecond;//进度条时间
+        function progressPlay(intervalTime) {
+            progressMillisecond += intervalTime;
+            $("#nowTime").html(formatTime(progressMillisecond));
+            var per = parseInt(progressMillisecond * 100 / totleMillisecond);
+            if (per >= 100) {
+                $("#videoPlay").hide();
+                $("#videoStop").hide();
+                $("#videoReview").show();
+                $(".progress").removeClass("active");
+                $("#processbar").attr("style", "width:100%");
+                clearInterval(progressTimer);
+                progressMillisecond = 0;
+                return;
+            }
+            $("#processbar").css({ 'width': per + '%' });
+        }
+
+        var playSeed = 0;//播放开关
+        function videoPlay(videoZip, frameDate, newSeed) {
+
+            var fs = Object.keys(zip.files);
+            var beginFrame = 0;
+            //查询帧
+            for (var i = 0; i < fs.length; i++) {
+
+                var tmpFrameDate = Number(fs[i].substring(0, fs[i].indexOf(".")));
+                if (tmpFrameDate >= frameDate) {
+                    beginFrame = i;
+                    break;
+                }
+            }
+
+
+
+            var nextFrame = beginFrame;
+            var lastFrameDate = frameDate;
+            var framePlay = function () {
+                if (playSeed !== newSeed) return;
+                zip.file(fs[nextFrame]).async("base64").then(function success(content) {
+                    image.src = "data:image/jpeg;base64," + content;
+                    lastFrame = fs[nextFrame];
+                })
+                nextFrame++;
+                if (nextFrame >= fs.length) return;
+
+
+                var nextFrameDate = Number(fs[nextFrame].substring(0, fs[nextFrame].indexOf(".")));
+                var sleepTime = nextFrameDate - lastFrameDate;
+                lastFrameDate = nextFrameDate;//跟新下一帧的时间
+                setTimeout(function () { framePlay(); }, sleepTime);
+            }
+
+            var nextFrameDate = Number(fs[nextFrame].substring(0, fs[nextFrame].indexOf(".")));
+            var sleepTime = nextFrameDate - frameDate;
+            setTimeout(function () { framePlay(); }, sleepTime);
+
+            progressTimer = setInterval(function () { progressPlay(300) }, 300);
+        }
+
+
+
+        $("#videoPlay").click(function () {
+            $("#videoPlay").hide();
+            $("#videoReview").hide();
+            $("#videoStop").show();
+            $(".progress").addClass("active");
+            play();
+        });
+
+
+        $("#videoStop").click(function () {
+            $(".progress").removeClass("active");
+            $("#videoStop").hide();
+            $("#videoReview").hide();
+            $("#videoPlay").show();
+            ++playSeed;
+            clearInterval(progressTimer);
+        });
+
+        $("#videoReview").click(function () {
+            $(this).hide();
+            $("#videoStop").show();
+            $("#processbar").attr("style", "width:" + 0 + "%");
+            play();
+        });
+
+        $(".progress").click(function (event) {
+
+
+            if ($("#videoStop").is(":visible")) {
+                $("#videoStop").click();
+                var x = getOffsetX(event);
+                var per = x / $(".progress").width();
+                $("#processbar").css({ 'width': Number(per * 100) + '%' });
+                progressMillisecond = Number(totleMillisecond * per);
+                $("#videoPlay").click();
+            } else {
+                var x = getOffsetX(event);
+                var per = x / $(".progress").width();
+                $("#processbar").css({ 'width': Number(per * 100) + '%' });
+                progressMillisecond = Number(totleMillisecond * per);
+                $("#videoPlay").click();
+            }
+
+        });
+
+
+        function play() {
+            var startDate = startFrameDate + progressMillisecond;
+            videoPlay(zip, startDate, ++playSeed);
+        }
+
+
+
+        function getOffsetX(event) {
+            var evt = event || window.event;
+            var srcObj = evt.target || evt.srcElement;
+            if (evt.offsetX) {
+                return evt.offsetX;
+            } else {
+                var rect = srcObj.getBoundingClientRect();
+                var clientx = evt.clientX;
+                return clientx - rect.left;
+            }
+        }
+
+
+        function formatTime(millisecond) {
+            var t = Number(millisecond / 1000);
+            return Math.floor(t / 60) + ":" + (t % 60 / 100).toFixed(2).slice(-2);
+        }
+
+    </script>
+}

@@ -17,6 +17,7 @@ namespace ShareDevice
     {
         public static void Main(string[] args)
         {
+
             Console.ForegroundColor = ConsoleColor.White;
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -59,11 +60,17 @@ namespace ShareDevice
                 device.StartMiniTouch();
 
             } else {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("error:没有发现可用设备.按任意键结束...");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("warring:未发现可用设备.输入\"Y\"可进入查看录像模式,输入其他将结束本程序...");
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.ReadKey();
-                return;
+                
+                var rs = Console.ReadLine().ToString();
+                var  yn = rs.FirstOrDefault();
+                if(yn !='Y' && yn != 'y') {
+                    return;
+                }
+               
+               
             }
 
 

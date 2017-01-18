@@ -5,7 +5,7 @@
 <div class="row">
 
     <div class="col-md-6 text-center">
-        <canvas id="phoneImg" width="@ViewBag.width" height="@ViewBag.height"></canvas>
+        <canvas id="phoneCanvas" width="@ViewBag.width" height="@ViewBag.height"></canvas>
     </div>
 
     <div class="col-md-6">
@@ -27,14 +27,21 @@
 
             var wsUri = "ws://" + window.location.host + "/WS/Watch";
            
-            var phoneImg = document.getElementById("phoneImg");
-            var context = phoneImg.getContext("2d");
-            var cWidth = phoneImg.width;
-            var cHeight = phoneImg.height;
+            var phoneCanvas = document.getElementById("phoneCanvas");
+            var context = phoneCanvas.getContext("2d");
 
-            var defultImg = new Image();
-            defultImg.src = "data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D";
-            context.drawImage(defultImg, 0, 0, cWidth, cHeight);
+
+            var image = new Image();
+            var canvasWidth = phoneCanvas.width;
+            var canvasHeight = phoneCanvas.height;
+
+            image.onload = function () {
+                context.clearRect(0, 0, canvasWidth, canvasHeight);
+                context.drawImage(image, 0, 0, canvasWidth, canvasHeight);
+                window.URL.revokeObjectURL(image.src)
+            }
+
+            image.src = "data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D";
 
 
             var output = document.getElementById("output");
@@ -73,14 +80,6 @@
                 if (typeof (evt.data) == "string") {
                     writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
                 } else {
-                    var image = new Image();
-
-                    image.onload = function () {
-                        context.clearRect(0, 0, cWidth, cHeight);
-                        context.drawImage(image, 0, 0, cWidth, cHeight);
-                        window.URL.revokeObjectURL(image.src)
-                    }
-
                     image.src = URL.createObjectURL(evt.data);
                 }
 
@@ -107,9 +106,6 @@
                 output.appendChild(pre);
                 output.scrollTop = output.scrollHeight;
             }
-
-            
-
 
             //确保服务器已经释放相关资源
             setTimeout(function () {

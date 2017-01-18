@@ -96,14 +96,6 @@ namespace ShareDevice.Controllers
 
         [NonAction]
         private void ControlDevice() {
-
-
-
-            
-
-
-
-
             using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
                 bool isPush = false;
                 //添加图像输出事件
@@ -121,26 +113,36 @@ namespace ShareDevice.Controllers
                 };
 
 
-                var vedio = ZipFile.Open(Path.Combine(Directory.GetCurrentDirectory(), $"Replay/{DateTime.Now.ToString("yyyyMMddhhmmss")}.zip"), ZipArchiveMode.Create);
+                var vedio = ZipFile.Open(Path.Combine(Directory.GetCurrentDirectory(), $"Replay/{ad.model}-{ad.deviceName}-{DateTime.Now.ToString("yyyyMMddhhmmss")}.zip"), ZipArchiveMode.Create);
                 bool isZipPush = false;
                 DateTime lastImgDate = DateTime.Now;
-                //添加图像输出事件
+                int imgCnt = 0;
+                //添加录像事件
                 var ZipEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
                     if (!isZipPush) {
                         isZipPush = true;
+                        if (imgCnt > 1500) {
+                            vedio.Dispose();
+                            vedio = ZipFile.Open(Path.Combine(Directory.GetCurrentDirectory(), $"Replay/{ad.model}-{ad.deviceName}-{DateTime.Now.ToString("yyyyMMddhhmmss")}.zip"), ZipArchiveMode.Create);
+                            imgCnt = 0;
+                        }
+
                         var nowDate = DateTime.Now;
-                        if ((nowDate -lastImgDate).TotalMilliseconds >300) {
+                        if ((nowDate -lastImgDate).TotalMilliseconds >200) {
 
                             lastImgDate = nowDate;
 
                             Image image = new Image(imgByte);
 
+                            //毫秒时间戳
+                            var epoch = (nowDate.ToUniversalTime().Ticks - 621355968000000000) / 10000;
+
                              // 添加jpg
-                            var e = vedio.CreateEntry($"{nowDate.ToString("yyyyMMddhhmmssfff")}.jpg", CompressionLevel.Optimal);
+                            var e = vedio.CreateEntry($"{epoch}.jpg", CompressionLevel.Optimal);
                             using (var stream = e.Open()) {
                                 image.Save(stream, imageEncoder);
-                                //stream.Write(imgByte, 0, imgByte.Length);
                             }
+                            imgCnt++;
                         }
                         isZipPush = false;
                     }
@@ -151,9 +153,6 @@ namespace ShareDevice.Controllers
                 //第一次通信 暂时不做处理
                 byte[] buffer = new byte[64];
                 var result = webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
-
-
-
 
                 webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以进行操控!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
@@ -169,7 +168,6 @@ namespace ShareDevice.Controllers
                 }
 
                 ad.RemoveMinicapEvent(MinicapEvent);
-
                 ad.RemoveMinicapEvent(ZipEvent);
 
                 vedio.Dispose();

@@ -48,11 +48,6 @@ namespace Minicap
         /// 开始执行
         /// </summary>
         public void Run() {
-
-
-            
-
-            
             //启动socket连接
             minicapSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             minicapSocket.Connect(new IPEndPoint(IPAddress.Parse(IP), PORT));
@@ -178,6 +173,7 @@ namespace Minicap
                                 break;
                             case 22:
                                 banner.Orientation += chunk[cursor] * 90;
+                                //Console.WriteLine("Orientation:" + chunk[cursor]);
                                 break;
                             case 23:
                                 banner.Quirks = chunk[cursor];
@@ -186,8 +182,7 @@ namespace Minicap
                         cursor += 1;
                         readBannerBytes += 1;
                     }
-                    //读取每张图片的头4个字节(图片大小)
-                    else if (readFrameBytes < 4)
+                    else if (readFrameBytes < 4)//读取每张图片的头4个字节(图片大小)
                     {
                         frameBodyLength += (chunk[cursor] << (readFrameBytes * 8));
                         cursor += 1;
@@ -211,11 +206,6 @@ namespace Minicap
 
                                 }
                             }
-                               
-                            
-                           
-
-                            //AddStream(frameBody);
 
                             cursor += frameBodyLength;
                             frameBodyLength = readFrameBytes = 0;
