@@ -79,6 +79,8 @@ namespace ShareDevice
             app.UseStaticFiles();
 
             app.UseWebSockets();
+            app.Map("/WS/Control", SocketHandler.MapControl);
+            app.Map("/WS/Watch", SocketHandler.MapWatch);
 
             app.UseMvc(routes =>
             {

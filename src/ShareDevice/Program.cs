@@ -43,21 +43,21 @@ namespace ShareDevice
 
                 Console.WriteLine($"开始共享手机 {device.deviceName} ...");
 
-                Controllers.WSController.ad = device;
+                SocketHandler.ad = device;
                 device.MiniLibPath = Path.Combine(Directory.GetCurrentDirectory(), "MiniLib");
 
-                device.InitMinicap();
+                //device.InitMinicap();
 
-                device.StartMinicapServer();
+                //device.StartMinicapServer();
 
-                device.InitMiniTouch();
+                //device.InitMiniTouch();
+
+                //device.StartMiniTouchServer();
+
+                device.startShareServers();
+
+
                 
-                device.StartMiniTouchServer();
-
-
-                Thread.Sleep(3000);
-                device.StartMinicap();
-                device.StartMiniTouch();
 
             } else {
                 Console.ForegroundColor = ConsoleColor.Yellow;

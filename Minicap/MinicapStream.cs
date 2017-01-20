@@ -15,10 +15,16 @@ namespace Minicap
 
     public delegate void MinicapEventHandler(byte[] imgByte);
 
+
     public class MinicapStream 
     {
         //定义push委托，用于写入图片流后通知其他监听器更新对象
         public event MinicapEventHandler push;
+
+        //图像连接断开后的通知事件
+        public event Action stopNotice;
+
+
 
         //定义IP和监听的端口
         private String IP = "127.0.0.1";
@@ -29,12 +35,14 @@ namespace Minicap
         //用于存放banner头信息
         private Banner banner = new Banner();
         private Socket minicapSocket;
-        byte[] chunk = new byte[4096];
+        byte[] chunk = new byte[1024 * 10];
 
 
 
 
-
+        /// <summary>
+        /// minicap 接收信息的线程,想强制关闭时可用
+        /// </summary>
         private Task ReadImageStreamTask;
 
         
@@ -44,43 +52,45 @@ namespace Minicap
         }
 
 
+
         /// <summary>
         /// 开始执行
         /// </summary>
         public void Run() {
             //启动socket连接
             minicapSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            minicapSocket.Connect(new IPEndPoint(IPAddress.Parse(IP), PORT));
 
+            minicapSocket.Connect(new IPEndPoint(IPAddress.Parse(IP), PORT));
+            
 
             ReadImageStreamTask = Task.Run(() => {
                 try {
                     ReadImageStream();
-                } catch (Exception) {
-
+                } catch (Exception e) {
+                    Console.WriteLine("error : >>>>>>>>>>>>>> ReadImageStream");
+                    Console.WriteLine(e.StackTrace);
+                } finally {
+                    minicapSocket.Dispose();
+                }
+                
+                Console.WriteLine("info : >>>>>>>>>>>>>> 关闭minicap");
+                //结束通知
+                if (stopNotice != null) {
+                    var events = stopNotice.GetInvocationList();
+                    foreach (Action d in events) {
+                        Task.Factory.StartNew(() => {
+                            d();
+                        }).ContinueWith(t => {
+                            stopNotice -= d;
+                        });
+                    }
                 }
                 
             });
             
         }
 
-        /// <summary>
-        /// 停止 并释放资源
-        /// </summary>
-        public void Stop() {
-            try {
-                minicapSocket.Dispose();
-            } catch (Exception) {
-
-            }
-
-          
-            ReadImageStreamTask.Wait();
-
-            clearPushEvent();
-            
-
-        }
+        
 
 
        
@@ -125,9 +135,7 @@ namespace Minicap
             byte[] frameBody = new byte[0];
             while ((reallen = minicapSocket.Receive(chunk)) != 0)
             {
-
-
-
+                
                 for (int cursor = 0, len = reallen; cursor < len; )
                 {
                     //读取banner信息
@@ -196,17 +204,27 @@ namespace Minicap
                             
                             frameBody = frameBody.Concat(subByteArray(chunk, cursor, cursor + frameBodyLength)).ToArray();
 
-                            //多线程内存问题解决
+                            //赋值内存,多线程
                             var tmp = (byte[])frameBody.Clone();
-
                             if (push != null) {
                                 try {
-                                    push.Invoke(tmp);
+                                    var events = push.GetInvocationList();
+                                    foreach (MinicapEventHandler e in events) {
+                                        Task.Factory.StartNew(() => {
+                                            e(tmp);
+                                        }).ContinueWith(t => {
+                                            if (t.Status != TaskStatus.RanToCompletion) {
+                                                push -= e;
+                                                Console.WriteLine("error : push error!");
+                                            }
+                                        });
+                                    }
                                 } catch (Exception) {
-
+                                    Console.WriteLine("error : push task error!");
                                 }
+                                
                             }
-
+                               
                             cursor += frameBodyLength;
                             frameBodyLength = readFrameBytes = 0;
                             frameBody = new byte[0];

@@ -1,67 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Devices;
-using Microsoft.AspNetCore.Http;
-using System.Net.WebSockets;
-using System.Threading;
-using System.IO.Compression;
-using System.IO;
+﻿using Devices;
 using ImageSharp;
 using ImageSharp.Formats;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Minicap;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net.WebSockets;
+using System.Threading;
+using System.Threading.Tasks;
 
-// For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+namespace ShareDevice {
+    public class SocketHandler {
 
-namespace ShareDevice.Controllers
-{
-    public class WSController : Controller
-    {
+
         public static AndroidDevice ad;
         public static bool isControl;
 
-    
-        public async Task Watch() {
 
-            if (Request.HttpContext.WebSockets.IsWebSocketRequest) {
-                WatchDevice();
-            } else {
-                await Request.HttpContext.Response.WriteAsync("请使用Websocekt进行连接!");
-            }
-        }
-      
-        public async Task Control() {
-
-            if (Request.HttpContext.WebSockets.IsWebSocketRequest) {
+        static async Task Control(HttpContext hc, Func<Task> n) {
+            if (hc.WebSockets.IsWebSocketRequest) {
                 if (isControl == false) {
                     isControl = true;
                     try {
-                        ControlDevice();
+                        await ControlDevice(hc);
                     } catch (Exception) {
-                        
+
 
                     } finally {
                         isControl = false;
                     }
                     isControl = false;
                 } else {
-                    WatchDevice();
+                    await WatchDevice(hc);
                 }
-            } else {
-                await Request.HttpContext.Response.WriteAsync("请使用Websocekt进行连接!");
             }
         }
 
 
-        public IActionResult Error() {
-            return View();
+        static async Task Watch(HttpContext hc, Func<Task> n) {
+            if (hc.WebSockets.IsWebSocketRequest) {
+                await WatchDevice(hc);
+            } 
         }
 
-        [NonAction]
-        private void WatchDevice() {
+        static async Task WatchDevice(HttpContext hc) {
 
-            using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
+            using (var webSocket = await hc.WebSockets.AcceptWebSocketAsync()) {
                 bool isPush = false;
                 //添加图像输出事件
                 var MinicapEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
@@ -71,7 +59,10 @@ namespace ShareDevice.Controllers
                         isPush = false;
                     }
                 });
-
+                //添加minicap 结束事件
+                var MinicapStopNotice = ad.AddMinicapStopNotice(delegate () {
+                    webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("图像输出已断开...")), WebSocketMessageType.Text, true, CancellationToken.None);
+                });
 
                 byte[] buffer = new byte[64];
                 var result = webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
@@ -79,25 +70,33 @@ namespace ShareDevice.Controllers
 
                 webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经链接手机,请耐心等待图像传输!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
-                while (true) {
-                    byte[] ReceiveBuffer = new byte[64];
-                    result = webSocket.ReceiveAsync(new ArraySegment<byte>(ReceiveBuffer), CancellationToken.None).Result;
 
-                    if (result.CloseStatus.HasValue) break;
+                byte[] ReceiveBuffer = new byte[1024];
+                var seg = new ArraySegment<byte>(ReceiveBuffer);
+                while (webSocket.State == WebSocketState.Open) {
+                    try {
+                        result = await webSocket.ReceiveAsync(seg, CancellationToken.None);
+                        if (result.CloseStatus.HasValue) {
+                            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+                            break;
+                        }
+                    } catch (Exception) {
+                        Console.WriteLine("error:webSocket ReceiveAsync");
+                        break;
+                    }
                 }
+                
                 ad.RemoveMinicapEvent(MinicapEvent);
-                webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None).Wait();
+                ad.RemoveMinicapStopNotice(MinicapStopNotice);
             }
 
 
         }
 
-
-
-        [NonAction]
-        private void ControlDevice() {
-            using (var webSocket = Request.HttpContext.WebSockets.AcceptWebSocketAsync().Result) {
+        static async Task ControlDevice(HttpContext hc) {
+            using (var webSocket = await hc.WebSockets.AcceptWebSocketAsync()) {
                 bool isPush = false;
+                
                 //添加图像输出事件
                 var MinicapEvent = ad.AddMinicapEvent(delegate (byte[] imgByte) {
                     if (!isPush) {
@@ -106,6 +105,14 @@ namespace ShareDevice.Controllers
                         isPush = false;
                     }
                 });
+
+                //添加minicap 结束事件
+                var MinicapStopNotice =  ad.AddMinicapStopNotice(delegate () {
+                    webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("图像输出已断开...")), WebSocketMessageType.Text, true, CancellationToken.None);
+                    webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                });
+                
+
 
                 IImageEncoder imageEncoder = new JpegEncoder() {
                     Quality = 50,
@@ -128,7 +135,7 @@ namespace ShareDevice.Controllers
                         }
 
                         var nowDate = DateTime.Now;
-                        if ((nowDate -lastImgDate).TotalMilliseconds >200) {
+                        if ((nowDate - lastImgDate).TotalMilliseconds > 200) {
 
                             lastImgDate = nowDate;
 
@@ -137,7 +144,7 @@ namespace ShareDevice.Controllers
                             //毫秒时间戳
                             var epoch = (nowDate.ToUniversalTime().Ticks - 621355968000000000) / 10000;
 
-                             // 添加jpg
+                            // 添加jpg
                             var e = vedio.CreateEntry($"{epoch}.jpg", CompressionLevel.Optimal);
                             using (var stream = e.Open()) {
                                 image.Save(stream, imageEncoder);
@@ -154,37 +161,44 @@ namespace ShareDevice.Controllers
                 byte[] buffer = new byte[64];
                 var result = webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
-                webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以进行操控!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
-
+                webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("已经连接手机,可以进行操控.")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
                 webSocket.SendAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes("如长时间未显示图像,请尝试点击屏幕或按下home键!")), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
 
-                while (true) {
-                    byte[] ReceiveBuffer = new byte[128];
-                    result = webSocket.ReceiveAsync(new ArraySegment<byte>(ReceiveBuffer), CancellationToken.None).Result;
-
-                    if (result.CloseStatus.HasValue) break;
-                    TouchEvent(ReceiveBuffer);
+                byte[] ReceiveBuffer = new byte[1024];
+                var seg = new ArraySegment<byte>(ReceiveBuffer);
+                while (webSocket.State == WebSocketState.Open) {
+                    try {
+                        result = await webSocket.ReceiveAsync(seg, CancellationToken.None);
+                        if (result.CloseStatus.HasValue) {
+                            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+                            break;
+                        }
+                        
+                    } catch (Exception) {
+                        Console.WriteLine("error:webSocket ReceiveAsync");
+                        break;
+                    }
+                    try {
+                        var outgoing = new ArraySegment<byte>(ReceiveBuffer, 0, result.Count);
+                        TouchEvent(outgoing.ToArray());
+                    } catch (Exception) {
+                        Console.WriteLine("error:TouchEvent");
+                    }
+                    
                 }
-
+              
                 ad.RemoveMinicapEvent(MinicapEvent);
                 ad.RemoveMinicapEvent(ZipEvent);
-
+                ad.RemoveMinicapStopNotice(MinicapStopNotice);
                 vedio.Dispose();
-
-                webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None).Wait();
-                webSocket.Dispose();
+                Console.WriteLine(">>>>>>>>>>>>>> end Recording");
             }
 
 
         }
 
-        [NonAction]
-        /// <summary>
-        /// 屏幕操作
-        /// </summary>
-        /// <param name="buffer"></param>
-        private void TouchEvent(byte[] buffer) {
+        static void TouchEvent(byte[] buffer) {
             string str = System.Text.Encoding.UTF8.GetString(buffer);
             var strArry = str.Split(':');
 
@@ -216,5 +230,15 @@ namespace ShareDevice.Controllers
             }
         }
 
+
+        public static void MapControl(IApplicationBuilder app) {
+            app.Use(SocketHandler.Control);
+        }
+
+        public static void MapWatch(IApplicationBuilder app) {
+            app.Use(SocketHandler.Watch);
+        }
+
+        
     }
 }

@@ -17,8 +17,7 @@ namespace MiniTouch {
         private Socket minitouhSocket;
 
         private Banner Banner;
-
-
+        
 
         public MiniTouchStream() {
             PORT = 1111;
@@ -29,11 +28,11 @@ namespace MiniTouch {
             
 
             minitouhSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            minitouhSocket.SendTimeout = 5000;//5秒超时时间
             minitouhSocket.Connect(new IPEndPoint(IPAddress.Parse(IP), PORT));
             ParseBanner(minitouhSocket);
         }
         public void Stop() {
-
             try {
                 minitouhSocket.Dispose();
             } catch (Exception) {
@@ -89,6 +88,7 @@ namespace MiniTouch {
         /// </summary>
         /// <param name="touchcommand">minitouch触摸命令</param>
         private void ExecuteTouch(string touchcommand) {
+
             //将动作数据转换为socket要提交的byte数据
             byte[] inbuff = Encoding.ASCII.GetBytes(touchcommand + "c\n");
             //发送socket数据

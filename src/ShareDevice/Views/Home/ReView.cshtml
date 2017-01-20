@@ -4,6 +4,8 @@
 }
 <br />
 <div class="col-md-6">
+
+    <p >录像存放路径 <strong> @ViewBag.Path</strong></p>
     <div class="videoList">
         @foreach (var m in Model) {
             <a href="#" class="list-group-item" data-file="@m.name">
@@ -17,7 +19,6 @@
 <div class="col-md-6">
     <div class="panel panel-default">
         <div class="panel-body">
-
             <center>
                 <div class="panel panel-info" style="width:460px;">
                     <div class="panel-body">
@@ -85,6 +86,10 @@
                 zip.loadAsync(data).then(function () {
                     initVideo();
                     $("#loading").fadeOut();
+                }).catch(function (r) {
+                    $(".videoList a").removeClass("active");
+                    $("#loading").hide();
+                    alert("文件损坏或正在被占用!");
                 });
             });
         });

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Devices
 {
+
     public class AndroidDevice {
 
         /// <summary>
@@ -25,7 +26,13 @@ namespace Devices
         /// 手机型号
         /// </summary>
         public string model { get; private set; }
-        
+
+        /// <summary>
+        /// 是否可用
+        /// </summary>
+        public bool visable { get; set; }
+
+
 
         private MinicapStream minicap;
 
@@ -122,30 +129,49 @@ namespace Devices
         /// 为Minicap添加push 事件
         /// </summary>
         public MinicapEventHandler AddMinicapEvent (MinicapEventHandler e) {
-           
-            //minicap.clearPushEvent();
             minicap.push += e;
-
             return e;
         }
-
-
-
-
         public void RemoveMinicapEvent(MinicapEventHandler e) {
-
             minicap.push -= e;
         }
 
+        /// <summary>
+        /// 为Minicap添加stop 事件
+        /// </summary>
+        public Action AddMinicapStopNotice(Action e) {
+            minicap.stopNotice += e;
+            return e;
+        }
 
+        public void RemoveMinicapStopNotice(Action e) {
+            minicap.stopNotice -= e;
+        }
+        /// <summary>
+        /// 开启相关的服务
+        /// </summary>
+        public void startShareServers() {
+            this.InitMinicap();
+
+            this.StartMinicapServer();
+
+            this.InitMiniTouch();
+
+            this.StartMiniTouchServer();
+
+            Thread.Sleep(3000);
+
+            this.StartMinicap();
+            this.StartMiniTouch();
+
+            visable = true;
+        }
 
         public void InitMinicap() {
 
             adbByDevice("forward --remove tcp:1313").Wait();
 
             minicap = new MinicapStream();
-            
-
             var MINICAP_FILE_PATH = Path.Combine(MiniLibPath, $"minicap/bin/{abi}/minicap");
             var MINICAPSO_FILE_PATH = Path.Combine(MiniLibPath, $"minicap/shared/android-{sdk}/{abi}/minicap.so");
 
@@ -161,10 +187,6 @@ namespace Devices
             string command = $"forward tcp:{minicap.PORT} localabstract:minicap";
            
             adbByDevice(command).Wait();
-
-
-            
-
 
 
         }
@@ -184,16 +206,21 @@ namespace Devices
         /// 启动截图相关服务
         /// </summary>
         public void StartMinicap() {
+            minicap.stopNotice += StopMinicap;
             minicap.Run();
         }
 
         public void StopMinicap() {
-            try {
-                minicap.Stop();
-                minicapServerProcess.Kill();
-            } catch (Exception) {
-
+            visable = false;
+            if (minicapServerProcess.HasExited) {
+                try {
+                    minicapServerProcess.Kill();
+                } catch (Exception) {
+                }
             }
+            //顺便把MiniTouch 也关掉
+            StopMiniTouch();
+            
         }
 
 
@@ -215,10 +242,7 @@ namespace Devices
             string forward = string.Format("forward tcp:{0} localabstract:minitouch", minitouch.PORT);
 
             adbByDevice(forward).Wait();
-
             
-
-
 
         }
 
@@ -239,11 +263,12 @@ namespace Devices
         }
 
         public void StopMiniTouch() {
-            try {
-                minitouch.Stop();
-                minitouhServerProcess.Kill();
-            } catch (Exception) {
-
+            minitouch.Stop();
+            if (minitouhServerProcess.HasExited) {
+                try {
+                    minitouhServerProcess.Kill();
+                } catch (Exception) {
+                }
             }
         }
 

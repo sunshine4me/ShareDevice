@@ -11,12 +11,18 @@ namespace ShareDevice.Controllers {
 
 
         public IActionResult Index() {
-            if(WSController.ad!=null) {
-                ViewBag.CPU = WSController.ad.abi;
-                ViewBag.SDK = WSController.ad.sdk;
-                ViewBag.width = WSController.ad.width;
-                ViewBag.height = WSController.ad.height;
-                ViewBag.Model = WSController.ad.model;
+            if (SocketHandler.ad != null) {
+                ViewBag.CPU = SocketHandler.ad.abi;
+                ViewBag.SDK = SocketHandler.ad.sdk;
+                ViewBag.width = SocketHandler.ad.width;
+                ViewBag.height = SocketHandler.ad.height;
+                ViewBag.Model = SocketHandler.ad.model;
+
+                if (SocketHandler.ad.visable) {
+                    ViewBag.Visable = true;
+                }else {
+                    ViewBag.Visable = false;
+                }
             }
 
             var addr = Request.HttpContext.Connection.RemoteIpAddress.ToString();
@@ -32,15 +38,15 @@ namespace ShareDevice.Controllers {
         [Route("Control")]
         public IActionResult Control() {
 
-            if(WSController.ad == null) {
+            if (SocketHandler.ad == null || SocketHandler.ad.visable == false) {
                 return Content("没有可用设备");
             }
 
-            if (WSController.isControl) {
+            if (SocketHandler.isControl) {
                 return View("ToWatch");
             } else {
-                ViewBag.width = WSController.ad.width / WSController.ad.minitouchScale;
-                ViewBag.height = WSController.ad.height / WSController.ad.minitouchScale;
+                ViewBag.width = SocketHandler.ad.width / SocketHandler.ad.minitouchScale;
+                ViewBag.height = SocketHandler.ad.height / SocketHandler.ad.minitouchScale;
                 return View();
             }
             
@@ -49,12 +55,12 @@ namespace ShareDevice.Controllers {
         [Route("Watch")]
         public IActionResult Watch() {
 
-            if (WSController.ad == null) {
+            if (SocketHandler.ad == null || SocketHandler.ad.visable == false) {
                 return Content("没有可用设备");
             }
 
-            ViewBag.width = WSController.ad.width / WSController.ad.minitouchScale;
-            ViewBag.height = WSController.ad.height / WSController.ad.minitouchScale;
+            ViewBag.width = SocketHandler.ad.width / SocketHandler.ad.minitouchScale;
+            ViewBag.height = SocketHandler.ad.height / SocketHandler.ad.minitouchScale;
             return View();
         }
 
@@ -79,7 +85,7 @@ namespace ShareDevice.Controllers {
                     }
                 }
 
-                
+                ViewBag.Path = TheFolder;
 
                 return View(videoList);
             } else {
