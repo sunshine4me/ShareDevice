@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Control";
 }
 <br />
@@ -11,6 +11,7 @@
             <button type="button" class="btn btn-primary android-menu" title="menu"><i class="glyphicon glyphicon-th-list"></i></button>
             <button type="button" class="btn btn-primary android-home" title="home"><i class="glyphicon glyphicon-home"></i></button>
             <button type="button" class="btn btn-primary android-back" title="back"><i class="glyphicon glyphicon-chevron-left"></i></button>
+            <button type="button" class="btn btn-primary android-power" title="power"><i class="glyphicon 	glyphicon glyphicon-flash"></i></button>
         </div>
     </div>
 
@@ -165,6 +166,38 @@
 
             }
 
+            // Set up touch events for mobile, etc
+            phoneCanvas.addEventListener("touchstart", function (e) {
+                mousePos = getTouchPos(phoneCanvas, e);
+                var touch = e.touches[0];
+                var mouseEvent = new MouseEvent("mousedown", {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                phoneCanvas.dispatchEvent(mouseEvent);
+            }, false);
+            phoneCanvas.addEventListener("touchend", function (e) {
+                var mouseEvent = new MouseEvent("mouseup", {});
+                phoneCanvas.dispatchEvent(mouseEvent);
+            }, false);
+            phoneCanvas.addEventListener("touchmove", function (e) {
+                var touch = e.touches[0];
+                var mouseEvent = new MouseEvent("mousemove", {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                phoneCanvas.dispatchEvent(mouseEvent);
+            }, false);
+
+            // Get the position of a touch relative to the canvas
+            function getTouchPos(canvasDom, touchEvent) {
+                var rect = canvasDom.getBoundingClientRect();
+                return {
+                    x: touchEvent.touches[0].clientX - rect.left,
+                    y: touchEvent.touches[0].clientY - rect.top
+                };
+            }
+
 
             $(".android-menu").click(function () {
                 doSend("4:82");
@@ -178,7 +211,9 @@
                 doSend("4:4");
             })
 
-
+            $(".android-power").click(function () {
+                doSend("4:26");
+            })
 
             //确保服务器已经释放相关资源
             setTimeout(function () {
